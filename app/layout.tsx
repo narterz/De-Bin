@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import ReduxProvider from "./lib/provider";
-import "./globals.css";
+import DndWrapper from "./components/DndWrapper";
+import "./globals.scss";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,7 +24,9 @@ export default function RootLayout({ children, }: Readonly<{ children: React.Rea
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ReduxProvider>
-          {children}
+          <DndWrapper>
+            {children}
+          </DndWrapper>
         </ReduxProvider>
       </body>
     </html>

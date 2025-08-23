@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@use "tailwindcss";
 
 @plugin "tailwindcss-animate";
 
@@ -147,9 +147,19 @@
   small {
     @apply text-sm font-light;
   }
+
+  .icon {
+    @apply cursor-pointer;
+  }
 }
 
 @layer components {
+
+  header {
+    .nav-list {
+      @apply w-full border border-green-500;
+    }
+  }
 
   .header-item {
     @apply flex flex-row items-center justify-around;
