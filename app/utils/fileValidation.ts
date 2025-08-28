@@ -1,10 +1,9 @@
-import { ValidateFiles, AppState, UploadedFile } from "./types";
+import { ValidateFiles, AppState, UploadedFile, AcceptedFilTypes, FileConversion } from "./types";
+import mime from 'mime-types';
 
 //TODO: Fix type error between File and uploadedFile
 
-const errorTypes = [
-
-]
+const errorTypes = [];
 
 // Serializes a file as base64 string to satisfy redux serialization standards
 export const serializeFile = (file: File): Promise<string> => {
@@ -15,6 +14,43 @@ export const serializeFile = (file: File): Promise<string> => {
         reader.onerror = (error) => reject(error);
     });
 };
+
+export const shortenFileName = (file: UploadedFile['fileName']): string => {
+    const fileExtension = file.substring(file.lastIndexOf("."));
+    const fileNameShort = file.substring(0, 13);
+    return `${fileNameShort}... ${fileExtension}`;
+};
+
+export const getFileExtension = (file: UploadedFile): string | false => {
+    const extension = file.fileName.slice(file.fileName.lastIndexOf('.'))
+    if(extension){
+        return extension
+    } else {
+        return mime.extension(file.fileType)
+    }
+}
+
+export const getFileConversions = (fileExtension: string) => {
+    const conversionList:FileConversion['conversionList'] = [ ".pdf", ".csv", ".jpg", '.png' ];
+    const chosenFileExtension = fileExtension as AcceptedFilTypes;
+    if(fileExtension === 'xlsx'){
+        return {
+            conversionList: conversionList + 'xlsb',
+            conversion: 'xlsb'
+        }
+    } else if (fileExtension === 'xlsb'){
+        return {
+            conversionList: conversionList + 'xlsx',
+            conversion: 'xlsx'
+        }
+    } else if (conversionList.includes(chosenFileExtension)){
+        return {
+            conversionList: conversionList.slice(conversionList.indexOf(chosenFileExtension), 1),
+            conversion: ''
+        }
+    }
+}
+
 
 const validateFileQuantity = (
     files: AppState["uploadedFiles"]

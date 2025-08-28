@@ -1,9 +1,11 @@
 import Header from "./components/Header";
 import DropBox from "./components/dropBox";
+import Modal  from './components/Modal';
 
 export default function Home() {
   return (
     <div className="w-screen h-screen flex flex-col items-center justify-between">
+      <Modal />
       <header className="w-full h-[12%] position-fixed top-0 left-0 bg-background">
         <Header />
       </header>

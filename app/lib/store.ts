@@ -1,10 +1,12 @@
 "use client"
 import { configureStore } from "@reduxjs/toolkit";
 import processFiles from './reducers/processFiles';
+import appController from "./reducers/appController";
 
 export const store = configureStore({
     reducer: {
-        process: processFiles
+        process: processFiles,
+        controller: appController
     }
 })
 

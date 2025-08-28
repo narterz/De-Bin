@@ -1,9 +1,12 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { RootState } from '../store';
-import { AppState, UploadedFile } from '@/app/utils/types';
+import { AppState, UploadedFile, FileConversion } from '@/app/utils/types';
 
 const initialState: AppState = {
     uploadedFiles: [],
+    fileConversion: {
+        conversionList: [],
+        conversion: ''
+    }
 }
 
 const processFiles = createSlice({
@@ -22,10 +25,13 @@ const processFiles = createSlice({
         },
         updateStatus: (state, action: PayloadAction<string>) => {
 
+        },
+        updateFileConversions: (state, action: PayloadAction<FileConversion>) => {
+            state.fileConversion.conversionList = action.payload.conversionList;
+            state.fileConversion.conversion = action.payload.conversion;
         }
     }
 })
 
 export const { uploadFile, removeFile } = processFiles.actions;
-export const processFile = (state: RootState) => state.process;
 export default processFiles.reducer;
