@@ -71,13 +71,18 @@ export default function DropBox() {
     // Deploy toast of error if the status of any file is 'error'
   },[])
 
+  const dropBoxColor = files.length < 1 ? "accent" : "foreground" 
+  const dropBoxRowClassName = files.length < 1 ? "dropbox-rows-no-files" : "dropbox-rows-files"
+
   return (
-    <div className="w-4/6 h-3/4 flex flex-col items-center justify-evenly border-dashed border-4 border-black bg-accent">
-      <div className="dropbox-rows">
+    <div className={`w-4/6 h-3/4 flex flex-col items-center justify-evenly border-dashed border-4 border-black bg-${dropBoxColor}`} id="dropBox">
+
+      <div className={files.length < 1 ? "dropbox-rows-no-files display-none-transition" : "hidden"}>
         <IoIosImages size={80} className="text-background" />
         <h3>Drag, drop, or select your files here</h3>
       </div>
-      <div className="dropbox-rows">
+
+      <div className={`display-none-transition ${`files.length < 1 ? dropBoxRowClassName : "w-3/4 flex-center-evenly" `}`}>
         <input 
           type="file"
           ref={inputFile}
@@ -86,18 +91,22 @@ export default function DropBox() {
           id="dropFileInput"
           className="hidden"
         />
-        <Button className="cursor-pointer" onClick={() => inputFile.current?.click()}>
-          <Files className="text-accent cursor-pointer" /> {files.length > 0 ? "Convert" : "Choose Files"}
-        </Button>
         <div className="w-full h-1/4 flex items-center justify-evenly">
           { files.length > 0 
             ? files.map((file) => (
-              <SelectedFiles file={file}/>
+              <SelectedFiles file={file} key={`selcted-file-${file.fileName}`}/>
             ))
             : <small>See help to view all acceptable files.</small>
           }
         </div>
       </div>
+
+      <div className={`display-none-transition  ${`files.length < 1 ? dropBoxRowClassName : "w-1/4 flex-center-evenly" `}`}>
+        <Button className="cursor-pointer" onClick={() => inputFile.current?.click()}>
+          <Files className="text-accent cursor-pointer" /> {files.length > 0 ? "Convert" : "Choose Files"}
+        </Button>
+      </div>
+
     </div>
   );
 }

@@ -30,6 +30,15 @@ export const getFileExtension = (file: UploadedFile): string | false => {
     }
 }
 
+export const convertFileSize = (fileSize: UploadedFile['fileSize']) => {
+    const conversionKb = fileSize / 1024;
+    const conversionMb = fileSize / ( 1024 * 1024)
+    const finalConversion = conversionKb >= 1000 
+        ? `${conversionMb}.mb` 
+        :  `${conversionKb}.kb`
+    return finalConversion
+}
+
 export const getFileConversions = (fileExtension: string) => {
     const conversionList:FileConversion['conversionList'] = [ ".pdf", ".csv", ".jpg", '.png' ];
     const chosenFileExtension = fileExtension as AcceptedFilTypes;
