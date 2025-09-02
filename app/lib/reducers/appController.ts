@@ -6,6 +6,7 @@ const initialState: AppController = {
         dialogIsOpen: false,
         dialogHeader: '',
         dialogBody: '',
+        dialogList: []
     } as DialogState,
     comboboxState: {
         comboboxIsOpen: false,
@@ -27,6 +28,9 @@ const appControllerSlice = createSlice({
         closeDialog: (state) => {
             state.dialogState = initialState.dialogState;
         },
+        dialogErrorList: (state, action: PayloadAction<DialogState['errorList']>) => {
+            state.dialogState.errorList = action.payload
+        },
         toggleComboBox: (state) => {
             state.comboboxState.comboboxIsOpen = !state.comboboxState.comboboxIsOpen
         },
@@ -36,5 +40,5 @@ const appControllerSlice = createSlice({
     }
 })
 
-export const { openDialog, closeDialog, toggleComboBox, setComboboxFileType } = appControllerSlice.actions;
+export const { openDialog, closeDialog, toggleComboBox, setComboboxFileType, dialogErrorList } = appControllerSlice.actions;
 export default appControllerSlice.reducer

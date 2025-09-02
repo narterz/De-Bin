@@ -46,5 +46,5 @@ const processFiles = createSlice({
     }
 })
 
-export const { uploadFile, removeFile } = processFiles.actions;
+export const { uploadFile, removeFile, updateStatus, setError } = processFiles.actions;
 export default processFiles.reducer;

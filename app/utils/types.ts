@@ -5,7 +5,7 @@ export type UploadedFile = {
     fileSize: number;
     fileType: string;
     status: "idle" | "loading" | "success" | "failure";
-    error?: FileError;
+    error?: string;
 };
 
 export type FileConversion = {
@@ -16,7 +16,7 @@ export type FileConversion = {
 export type UpdateFile = {
     id: string,
     status: "idle" | "loading" | "success" | "failure";
-    error?: FileError
+    error?: string
 }
 
 export type AcceptedFilTypes = ".pdf" | ".csv" | ".png" | ".xlsx" | "xlsb" | ".jpg" 
@@ -26,15 +26,12 @@ export type AppState = {
     fileConversion: FileConversion
 };
 
-export type FileError = {
-    isValid: boolean;
-    message: string | null;
-};
 
 export type DialogState = {
     dialogIsOpen: boolean;
     dialogHeader?: string;
     dialogBody?: string;
+    errorList?: string[];
 };
 
 export type ComboBoxState = {

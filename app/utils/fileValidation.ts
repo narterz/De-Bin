@@ -1,4 +1,4 @@
-import { FileError, AppState, UploadedFile, AcceptedFilTypes, FileConversion } from "./types";
+import { AppState, UploadedFile, AcceptedFilTypes, FileConversion, UpdateFile } from "./types";
 import mime from 'mime-types';
 
 // ############### File mutations
@@ -60,53 +60,47 @@ export const getFileConversions = (fileExtension: string) => {
 
 // ############### File validations
 
-const validateFileQuantity = (files: AppState["uploadedFiles"]): FileError | boolean => {
-    const allFiles = Array.from(files);
-    if (allFiles.length > 3) {
-        return {
-            isValid: false,
-            message: "You can only select up to three files at a time",
-        };
-    } else {
-        return true
-    }
-};
-
-const validateFileSize = (file: UploadedFile): FileError | boolean => {
+const validateFileSize = (file: UploadedFile): UpdateFile => {
     const MAX_FILE_SIZE_MB = 3;
     const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
     if (file.fileSize > MAX_FILE_SIZE_BYTES) {
         return {
-            isValid: false,
-            message: `File ${file.fileName} is too large. file size can be no more than 3mb`,
+            id: file.id,
+            status: 'failure',
+            error: `${file.fileName} is too large. File size can be no more than 3mb`,
         };
     } else {
-        return true
+        return {
+            id: file.id,
+            status: 'loading',
+            error: ''
+        }
     }
 };
 
-const validateFileExtension = (file: UploadedFile): FileError | boolean => {
+const validateFileExtension = (file: UploadedFile): UpdateFile => {
     const acceptedFileTypes = [".pdf" , ".csv" , ".png" , ".xlsx" , "xlsb" , ".jpg"];
     if (!acceptedFileTypes.includes(file.fileType)) {
         return {
-            isValid: false,
-            message: `File ${file.fileName} has unsupported extension ${file.fileName}.`,
+            id: file.id,
+            status: 'failure',
+            error: `${file.fileName} is an unsupported format ${file.fileType}.`,
         };
     } else {
-        return true;
+        return {
+            id: file.id,
+            status: 'loading',
+            error: ''
+        }
     }
 };
 
-// Validates N files uploaded. Returns bool and response message
-export function validateSelectedFiles(files: UploadedFile[]): FileError | boolean {
-    const individualFileValidations = files.map((file) => [
+// Returns array of failed files if any or true if none
+export function validateSelectedFiles(files: UploadedFile[]): UpdateFile[] {
+    const allValidations = files.map((file) => [
         validateFileSize(file),
         validateFileExtension(file)
     ]).flat();
-    const quantityCheck = validateFileQuantity(files);
-    if(quantityCheck !== true) return quantityCheck;
-    const firstError = individualFileValidations.find((validation: any) => validation !== true);
-    if (firstError) return firstError;
-
-    return true
+    const failedValidations = allValidations.filter((validation: UpdateFile) => validation.status === 'failure');
+    return failedValidations ? failedValidations : allValidations
 }

@@ -1,17 +1,14 @@
 "use client";
 
-import { FaFileArrowUp } from "react-icons/fa6";
 import { IoIosImages } from "react-icons/io";
-import { MdCancel } from "react-icons/md";
 import { Button } from "@/components/ui/button";
 import { Files } from "lucide-react";
-import {  useRef, ChangeEvent, useEffect } from "react";
+import {  useRef, ChangeEvent } from "react";
 import { useAppDispatch, useAppSelector } from "../lib/hooks";
-import { uploadFile, removeFile } from "../lib/reducers/processFiles";
+import { uploadFile, removeFile, setError } from "../lib/reducers/processFiles";
 import { openDialog } from "../lib/reducers/appController";
-import { validateSelectedFiles, serializeFile, shortenFileName } from "../utils/fileValidation";
-import { UploadedFile } from "../utils/types";
-import { processFile, appController } from "../lib/selectors";
+import { validateSelectedFiles, serializeFile } from "../utils/fileValidation";
+import { processFile } from "../lib/selectors";
 import SelectedFiles from "./SelectedFiles";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -20,11 +17,17 @@ export default function DropBox() {
   const inputFile = useRef<HTMLInputElement>(null);
 
   const files = useAppSelector(processFile).uploadedFiles;
-  const dialogController = useAppSelector(appController).dialogState;
 
   const handleFileUpload = ( e: ChangeEvent<HTMLInputElement> ) => {
     let files: FileList | null = e.target.files;
     if(!files) return;
+    if(files.length > 3){
+      console.debug(`File quantity of ${files.length} exceeded 3.`);
+      dispatch(openDialog({
+        header: 'Error: too many files',
+        body: "De-bin only allows up to 3 files at a time. Please try again"
+      }))
+    }
     Promise.all(
       [...files].map(async file => {
         const serializedFile = await serializeFile(file)
@@ -42,38 +45,19 @@ export default function DropBox() {
   const handleDropBoxBtn = () => {
     if(files.length > 0){
       const allValidatedFiles = validateSelectedFiles(files);
-      
-      /* 
-        Iterate over each file in files:
-          change status to loading
-          validate each file
-          if error on file:
-            display errored file in toast and remove from files
-          call convertFile()
-      */
+      for(let i = 0; i < allValidatedFiles.length; i++){
+        const failedFile = allValidatedFiles[i];
+        dispatch(setError({
+          id: failedFile.id,
+          status: failedFile.status,
+          error: failedFile.error
+        }))
+      }
+
     } else {
       inputFile.current?.click();
     }
   }
-
-  useEffect(() => {
-    const pendingFiles = files.every(file => file.status !== 'loading');
-    const failedFiles = files.filter(file => file.status === "failure");
-    const allSuccess = files.every(file => file.status === 'success');
-    if(pendingFiles){
-      dispatch(openDialog({
-        header: "Processing files",
-        body: "Please wait while your files are being converted"
-      }));
-    } else if (failedFiles){
-      dispatch(openDialog({
-        header: "Failed to convert files",
-        body: `Failed to process file(s): ${failedFiles} please try again`
-      }))
-    }
-    // Close the loadingModal if the status of all files != 'loading
-    // Deploy toast of error if the status of any file is 'error'
-  },[])
 
   const dropBoxColor = files.length < 1 ? "accent" : "foreground" 
   const dropBoxRowClassName = files.length < 1 ? "dropbox-rows-no-files" : "dropbox-rows-files"
