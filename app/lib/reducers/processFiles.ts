@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { AppState, UploadedFile, FileConversion } from '@/app/utils/types';
+import { AppState, UploadedFile, FileConversion, UpdateFile } from '@/app/utils/types';
+import { validateSelectedFiles } from '@/app/utils/fileValidation';
 
 const initialState: AppState = {
     uploadedFiles: [],
@@ -14,8 +15,8 @@ const processFiles = createSlice({
     initialState,
     reducers: {
         uploadFile: (state, action: PayloadAction<UploadedFile>) => {
-            const { file, fileName, fileSize, fileType, status } = action.payload;
-            state.uploadedFiles.push({ file, fileName, fileSize, fileType, status });
+            const { file, fileName, fileSize, fileType, status, id } = action.payload;
+            state.uploadedFiles.push({ file, fileName, fileSize, fileType, status, id });
         },
         removeFile: (state, action: PayloadAction<UploadedFile['fileName']>) => {
             const index = state.uploadedFiles.findIndex(file => file.fileName === action.payload);
@@ -23,12 +24,24 @@ const processFiles = createSlice({
                 state.uploadedFiles.splice(index, 1);
             }
         },
-        updateStatus: (state, action: PayloadAction<string>) => {
-
+        updateStatus: (state, action: PayloadAction<UpdateFile>) => {
+            const { id, status } = action.payload;
+            const updatedFile = state.uploadedFiles.find((file) => file.id === id);
+            if (updatedFile) {
+                updatedFile.status = status
+            }
         },
         updateFileConversions: (state, action: PayloadAction<FileConversion>) => {
             state.fileConversion.conversionList = action.payload.conversionList;
             state.fileConversion.conversion = action.payload.conversion;
+        },
+        setError: (state, action: PayloadAction<UpdateFile>) => {
+            const { id, status, error } = action.payload;
+            const updatedFile = state.uploadedFiles.find((file) => file.id === id);
+            if (updatedFile) {
+                updatedFile.status = status;
+                updatedFile.error = error
+            }
         }
     }
 })

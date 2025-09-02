@@ -13,6 +13,7 @@ import { validateSelectedFiles, serializeFile, shortenFileName } from "../utils/
 import { UploadedFile } from "../utils/types";
 import { processFile, appController } from "../lib/selectors";
 import SelectedFiles from "./SelectedFiles";
+import { v4 as uuidv4 } from 'uuid';
 
 export default function DropBox() {
   const dispatch = useAppDispatch();
@@ -32,13 +33,16 @@ export default function DropBox() {
           fileName: file.name,
           fileSize: file.size,
           fileType: file.type,
-          status: "idle"
+          status: "idle",
+          id: uuidv4()
         }))
       }))
   }
 
   const handleDropBoxBtn = () => {
     if(files.length > 0){
+      const allValidatedFiles = validateSelectedFiles(files);
+      
       /* 
         Iterate over each file in files:
           change status to loading
@@ -91,7 +95,7 @@ export default function DropBox() {
           id="dropFileInput"
           className="hidden"
         />
-        <div className="w-full h-1/4 flex items-center justify-evenly">
+        <div className="w-full h-1/4 flex items-center justify-evenly border border-red-500">
           { files.length > 0 
             ? files.map((file) => (
               <SelectedFiles file={file} key={`selcted-file-${file.fileName}`}/>

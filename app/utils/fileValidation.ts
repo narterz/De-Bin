@@ -1,9 +1,7 @@
-import { ValidateFiles, AppState, UploadedFile, AcceptedFilTypes, FileConversion } from "./types";
+import { FileError, AppState, UploadedFile, AcceptedFilTypes, FileConversion } from "./types";
 import mime from 'mime-types';
 
-//TODO: Fix type error between File and uploadedFile
-
-const errorTypes = [];
+// ############### File mutations
 
 // Serializes a file as base64 string to satisfy redux serialization standards
 export const serializeFile = (file: File): Promise<string> => {
@@ -60,10 +58,9 @@ export const getFileConversions = (fileExtension: string) => {
     }
 }
 
+// ############### File validations
 
-const validateFileQuantity = (
-    files: AppState["uploadedFiles"]
-): ValidateFiles => {
+const validateFileQuantity = (files: AppState["uploadedFiles"]): FileError | boolean => {
     const allFiles = Array.from(files);
     if (allFiles.length > 3) {
         return {
@@ -71,53 +68,45 @@ const validateFileQuantity = (
             message: "You can only select up to three files at a time",
         };
     } else {
-        return {
-            isValid: true,
-            message: "",
-        };
+        return true
     }
 };
 
-const validateFileSize = (file: UploadedFile["file"]): ValidateFiles => {
+const validateFileSize = (file: UploadedFile): FileError | boolean => {
     const MAX_FILE_SIZE_MB = 3;
     const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-    if (file.size > MAX_FILE_SIZE_BYTES) {
+    if (file.fileSize > MAX_FILE_SIZE_BYTES) {
         return {
             isValid: false,
-            message: `File ${file.name} is too large. file size can be no more than 3mb`,
+            message: `File ${file.fileName} is too large. file size can be no more than 3mb`,
         };
     } else {
-        return {
-            isValid: true,
-            message: "",
-        };
+        return true
     }
 };
 
-const validateFileExtension = (file: File) => {
-    const acceptedFileTypes = ["xlsb", ".gz", ".zip"];
-    if (!acceptedFileTypes.includes(file.type)) {
+const validateFileExtension = (file: UploadedFile): FileError | boolean => {
+    const acceptedFileTypes = [".pdf" , ".csv" , ".png" , ".xlsx" , "xlsb" , ".jpg"];
+    if (!acceptedFileTypes.includes(file.fileType)) {
         return {
             isValid: false,
-            message: `File ${file.name} has unsupported extension ${file.type}.`,
+            message: `File ${file.fileName} has unsupported extension ${file.fileName}.`,
         };
     } else {
-        return {
-            isValid: true,
-            message: "",
-        };
+        return true;
     }
 };
 
 // Validates N files uploaded. Returns bool and response message
-export function validateSelectedFiles(files: AppState["uploadedFiles"]) {
-    const allFiles = Array.from(files);
-    const quantityCheck = validateFileQuantity(allFiles);
-    const fileSizeCheck = allFiles.forEach((file) => {
-        validateFileSize(file);
-    });
+export function validateSelectedFiles(files: UploadedFile[]): FileError | boolean {
+    const individualFileValidations = files.map((file) => [
+        validateFileSize(file),
+        validateFileExtension(file)
+    ]).flat();
+    const quantityCheck = validateFileQuantity(files);
+    if(quantityCheck !== true) return quantityCheck;
+    const firstError = individualFileValidations.find((validation: any) => validation !== true);
+    if (firstError) return firstError;
 
-    //Iterate each file to see if size is more than or equal to 3mb
-
-    //Iterate each file to see if extension is not of type AcceptedFiles
+    return true
 }
