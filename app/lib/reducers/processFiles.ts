@@ -1,4 +1,12 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
+import { 
+    convertToCsv,
+    convertToDocx, 
+    convertToJpg, 
+    convertToPdf,
+     convertToPng,
+      convertToXlsb 
+} from "../../utils/fileConversions";
 import { AppState, UploadedFile, FileConversion, UpdateFile } from '@/app/utils/types';
 import { validateSelectedFiles } from '@/app/utils/fileValidation';
 
@@ -9,6 +17,8 @@ const initialState: AppState = {
         conversion: ''
     }
 }
+
+// const formatFile = createAsyncThunk()
 
 const processFiles = createSlice({
     name: 'processFiles',
@@ -23,6 +33,10 @@ const processFiles = createSlice({
             if (index !== -1) {
                 state.uploadedFiles.splice(index, 1);
             }
+        },
+        clearAllFiles: (state) => {
+          state.uploadedFiles = initialState.uploadedFiles;
+          state.fileConversion = initialState.fileConversion; 
         },
         updateStatus: (state, action: PayloadAction<UpdateFile>) => {
             const { id, status } = action.payload;
@@ -42,7 +56,7 @@ const processFiles = createSlice({
                 updatedFile.status = status;
                 updatedFile.error = error
             }
-        }
+        },
     }
 })
 

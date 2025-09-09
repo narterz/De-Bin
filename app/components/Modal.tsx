@@ -34,6 +34,7 @@ export default function Modal() {
         const pendingFiles = files.some((file) => file.status === "loading");
         const failedFiles = files.filter((file) => file.status === "failure");
         if (pendingFiles) {
+            console.debug(`Files are pending opening pending dialog`);
             setSomePending(true)
             dispatch(
                 openDialog({
@@ -41,7 +42,8 @@ export default function Modal() {
                     body: "Please wait while your files are being converted",
                 })
             );
-        } else if (failedFiles) {
+        } else if (failedFiles.length > 0) {
+            console.debug(`Opening failure modal. The following files failed ${failedFiles}`)
             dispatch(closeDialog());
             setSomePending(false)
             dispatch(
@@ -76,7 +78,11 @@ export default function Modal() {
 
                 <DialogDescription>
                     <span>{dialogState.dialogBody}</span>
-                    {}
+                    <ul className="w-full h-2/3 flex flex-col items-center justify-evenly">
+                        {dialogController.errorList?.map((message, i) => (
+                            <li key={`message-${i}`}>{message[i]}</li>
+                        ))}
+                    </ul>
                 </DialogDescription>
 
                 <DialogFooter>

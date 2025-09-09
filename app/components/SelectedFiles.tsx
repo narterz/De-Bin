@@ -14,7 +14,7 @@ export default function SelectedFiles({ file }: { file: UploadedFile }) {
     }
 
     return (
-        <div className="w-full h-full flex flex-row border rounded shadow-lg bg-foreground text-white" id="selected-file">
+        <div className={`w-full h-1/3 flex flex-row border rounded shadow-lg bg-accent text-white border-red-500`} id="selected-file">
             <div className="flex-center-between selected-file-section">
                 <Button className="icon-btn" onClick={() => handleExpandFileName(file.fileName)}>
                     <File className="selected-file-icons" />

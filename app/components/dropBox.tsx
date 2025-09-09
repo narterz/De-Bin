@@ -2,8 +2,8 @@
 
 import { IoIosImages } from "react-icons/io";
 import { Button } from "@/components/ui/button";
-import { Files } from "lucide-react";
-import {  useRef, ChangeEvent } from "react";
+import { Files, X } from "lucide-react";
+import {  useRef, ChangeEvent, useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../lib/hooks";
 import { uploadFile, removeFile, setError } from "../lib/reducers/processFiles";
 import { openDialog } from "../lib/reducers/appController";
@@ -13,6 +13,7 @@ import SelectedFiles from "./SelectedFiles";
 import { v4 as uuidv4 } from 'uuid';
 
 export default function DropBox() {
+  const [areSelectedFiles, setAreSelectedFiles] = useState<boolean>(false);
   const dispatch = useAppDispatch();
   const inputFile = useRef<HTMLInputElement>(null);
 
@@ -59,18 +60,24 @@ export default function DropBox() {
     }
   }
 
-  const dropBoxColor = files.length < 1 ? "accent" : "foreground" 
-  const dropBoxRowClassName = files.length < 1 ? "dropbox-rows-no-files" : "dropbox-rows-files"
+  useEffect(() => {
+    if(files.length > 1) {
+      setAreSelectedFiles(true)
+    } else setAreSelectedFiles(false)
+  },[files])
+
+  const dropBoxColor = areSelectedFiles ? "bg-black" : "bg-accent";
+  const dropBoxRowClassName = areSelectedFiles ? "dropbox-rows-no-files" : "dropbox-rows-files"
 
   return (
-    <div className={`w-4/6 h-3/4 flex flex-col items-center justify-evenly border-dashed border-4 border-black bg-${dropBoxColor}`} id="dropBox">
+    <div className={`w-4/6 h-5/6 flex flex-col items-center justify-evenly border-dashed border-4 border-black ${areSelectedFiles ? "bg-black" : "bg-accent"}`} id="dropBox">
 
-      <div className={files.length < 1 ? "dropbox-rows-no-files display-none-transition" : "hidden"}>
+      <div className={areSelectedFiles ? "dropbox-rows-no-files display-none-transition" : "hidden"}>
         <IoIosImages size={80} className="text-background" />
         <h3>Drag, drop, or select your files here</h3>
       </div>
 
-      <div className={`display-none-transition ${`files.length < 1 ? dropBoxRowClassName : "w-3/4 flex-center-evenly" `}`}>
+      <div className={`display-none-transition ${areSelectedFiles ? dropBoxRowClassName : "w-3/4 h-full text-center flex-center-evenly" }`}>
         <input 
           type="file"
           ref={inputFile}
@@ -79,19 +86,31 @@ export default function DropBox() {
           id="dropFileInput"
           className="hidden"
         />
-        <div className="w-full h-1/4 flex items-center justify-evenly border border-red-500">
+        <div className="w-full h-4/5 flex items-center justify-evenly border border-red-500">
           { files.length > 0 
             ? files.map((file) => (
               <SelectedFiles file={file} key={`selcted-file-${file.fileName}`}/>
             ))
-            : <small>See help to view all acceptable files.</small>
+            : <div className="h-full flex flex-col justify-evenly items-centers">
+                <div className="w-1/2 h-1/2 flex flex-row items-center justify-evenly me-auto ms-auto">
+                  <IoIosImages size={40} className="text-background" />
+                  <h3>Drop your files here</h3>
+                </div>
+                <div className="h-1/2 flex flex-col justify-center m-5">
+                  <p>Drag and drop your files here or press the button below to select files</p>
+                  <small>See help to view all acceptable files.</small>
+                </div>
+              </div>
           }
         </div>
       </div>
 
-      <div className={`display-none-transition  ${`files.length < 1 ? dropBoxRowClassName : "w-1/4 flex-center-evenly" `}`}>
-        <Button className="cursor-pointer" onClick={() => inputFile.current?.click()}>
-          <Files className="text-accent cursor-pointer" /> {files.length > 0 ? "Convert" : "Choose Files"}
+      <div className={`display-none-transition w-1/4 h-1/5 flex flex-row justify-center items-center mb-5`}>
+        <Button onClick={() => inputFile.current?.click()}>
+          <Files className="dropbox-icons" /> {files.length > 0 ? "Convert" : "Choose Files"}
+        </Button>
+        <Button className={areSelectedFiles ? "block" : "hidden"}>
+          <X className="dropbox-icons"/>
         </Button>
       </div>
 
