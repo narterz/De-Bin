@@ -14,9 +14,8 @@ export const serializeFile = (file: File): Promise<string> => {
 };
 
 export const shortenFileName = (file: UploadedFile['fileName']): string => {
-    const fileExtension = file.substring(file.lastIndexOf("."));
     const fileNameShort = file.substring(0, 13);
-    return `${fileNameShort}... ${fileExtension}`;
+    return `${fileNameShort}...`;
 };
 
 export const getFileExtension = (file: UploadedFile): string | false => {

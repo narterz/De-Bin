@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { AppController, ComboBoxState, DialogState } from '@/app/utils/types';
+import { AppController, SelectState, DialogState } from '@/app/utils/types';
 
 const initialState: AppController = {
     dialogState: {
@@ -8,10 +8,9 @@ const initialState: AppController = {
         dialogBody: '',
         dialogList: []
     } as DialogState,
-    comboboxState: {
-        comboboxIsOpen: false,
-        selectedType: ''
-    } as ComboBoxState
+    selectState: {
+        selectIsOpen: false,
+    } as SelectState
 }
 
 const appControllerSlice = createSlice({
@@ -31,14 +30,11 @@ const appControllerSlice = createSlice({
         dialogErrorList: (state, action: PayloadAction<DialogState['errorList']>) => {
             state.dialogState.errorList = action.payload
         },
-        toggleComboBox: (state) => {
-            state.comboboxState.comboboxIsOpen = !state.comboboxState.comboboxIsOpen
+        toggleSelect: (state) => {
+            state.selectState.selectIsOpen = !state.selectState.selectIsOpen;
         },
-        setComboboxFileType: (state, action: PayloadAction<string>) => {
-            state.comboboxState.selectedType = action.payload
-        }
     }
 })
 
-export const { openDialog, closeDialog, toggleComboBox, setComboboxFileType, dialogErrorList } = appControllerSlice.actions;
+export const { openDialog, closeDialog, toggleSelect, dialogErrorList } = appControllerSlice.actions;
 export default appControllerSlice.reducer

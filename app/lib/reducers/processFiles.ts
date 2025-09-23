@@ -4,8 +4,8 @@ import {
     convertToDocx, 
     convertToJpg, 
     convertToPdf,
-     convertToPng,
-      convertToXlsb 
+    convertToPng,
+    convertToXlsb 
 } from "../../utils/fileConversions";
 import { AppState, UploadedFile, FileConversion, UpdateFile } from '@/app/utils/types';
 import { validateSelectedFiles } from '@/app/utils/fileValidation';
@@ -45,6 +45,9 @@ const processFiles = createSlice({
                 updatedFile.status = status
             }
         },
+        setFileConversion: (state, action: PayloadAction<FileConversion['conversion']>) => {
+            state.fileConversion.conversion = action.payload
+        },
         updateFileConversions: (state, action: PayloadAction<FileConversion>) => {
             state.fileConversion.conversionList = action.payload.conversionList;
             state.fileConversion.conversion = action.payload.conversion;
@@ -60,5 +63,5 @@ const processFiles = createSlice({
     }
 })
 
-export const { uploadFile, removeFile, updateStatus, setError } = processFiles.actions;
+export const { uploadFile, removeFile, updateStatus, setError, setFileConversion, clearAllFiles } = processFiles.actions;
 export default processFiles.reducer;

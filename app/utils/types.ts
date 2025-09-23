@@ -34,12 +34,11 @@ export type DialogState = {
     errorList?: string[];
 };
 
-export type ComboBoxState = {
-    comboboxIsOpen: boolean;
-    selectedType: string;
+export type SelectState = {
+    selectIsOpen: boolean;
 }
 
 export type AppController = {
     dialogState: DialogState;
-    comboboxState: ComboBoxState
+    selectState: SelectState
 };
