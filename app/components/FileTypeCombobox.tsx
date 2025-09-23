@@ -32,10 +32,10 @@ export default function FileTypeCombobox(){
                     variant='outline'
                     role="combobox"
                     aria-expanded={comboboxState.comboboxIsOpen}
-                    className=""
+                    className="text-accent"
                 >
                     {fileState.conversion}
-                    <ChevronsUpDownIcon className="file-type-icon"/>
+                    <ChevronsUpDownIcon className="file-type-icon text-accent"/>
                 </Button>
             </PopoverTrigger>
             <PopoverContent>

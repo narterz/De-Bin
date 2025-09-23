@@ -35,8 +35,8 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
+  --color-popover-foreground: var(--accent);
+  --color-popover: var(--accent);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
   --radius-sm: calc(var(--radius) - 4px);
@@ -55,8 +55,6 @@
   --paragraph-light: #77797a;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.147 0.004 49.25);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.147 0.004 49.25);
   --primary: oklch(0.216 0.006 56.043);
   --primary-foreground: oklch(0.985 0.001 106.423);
   --secondary: oklch(0.97 0.001 106.424);
@@ -160,6 +158,7 @@
     @apply cursor-pointer;
   }
 
+
 }
 
 @layer components {
@@ -179,16 +178,27 @@
   }
 
   #dropBox {
+    @apply border border-red-500;
 
     .dropbox-container {
       @apply w-4/6 h-5/6 flex flex-col items-center justify-evenly border-dashed border-4 border-black;
 
-      &.dropbox-color-no-files {
-        @apply bg-accent;
+      #dropBox-header {
+        flex-direction: row;
+        justify-content: space-evenly;
       }
 
-      &.dropbox-color-files {
-        @apply bg-foreground;
+      #dropBox-body {
+
+      }
+
+      .dropBox-footer {
+
+        .dropBox-btns {
+          @apply w-1/4 border border-red-500;
+        }
+
+
       }
     }
 
@@ -206,7 +216,7 @@
   }
 
   #selected-file {
-    @apply w-5/6 h-full flex flex-row border rounded shadow-lg bg-foreground border-red-500;
+    @apply w-5/6 h-full flex flex-row border rounded shadow-lg bg-foreground;
 
     p {
       @apply text-black;

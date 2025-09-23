@@ -32,8 +32,8 @@ export const convertFileSize = (fileSize: UploadedFile['fileSize']) => {
     const conversionKb = fileSize / 1024;
     const conversionMb = fileSize / ( 1024 * 1024)
     const finalConversion = conversionKb >= 1000 
-        ? `${conversionMb}.mb` 
-        :  `${conversionKb}.kb`
+        ? `${conversionMb.toFixed(2)}.mb` 
+        :  `${conversionKb.toFixed(2)}.kb`
     return finalConversion
 }
 
