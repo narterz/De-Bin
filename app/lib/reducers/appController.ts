@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { AppController, SelectState, DialogState } from '@/app/utils/types';
+import { AppController, SelectState, DialogState, TooltipState } from '@/app/utils/types';
 
 const initialState: AppController = {
     dialogState: {
@@ -10,7 +10,10 @@ const initialState: AppController = {
     } as DialogState,
     selectState: {
         selectIsOpen: false,
-    } as SelectState
+    } as SelectState,
+    tooltipState: {
+        tooltipIsOpen: false
+    } as TooltipState
 }
 
 const appControllerSlice = createSlice({
@@ -33,8 +36,11 @@ const appControllerSlice = createSlice({
         toggleSelect: (state) => {
             state.selectState.selectIsOpen = !state.selectState.selectIsOpen;
         },
+        toggleTooltip: (state) => {
+            state.tooltipState.tooltipIsOpen = !state.tooltipState.tooltipIsOpen;
+        }
     }
 })
 
-export const { openDialog, closeDialog, toggleSelect, dialogErrorList } = appControllerSlice.actions;
+export const { openDialog, closeDialog, toggleSelect, dialogErrorList, toggleTooltip } = appControllerSlice.actions;
 export default appControllerSlice.reducer

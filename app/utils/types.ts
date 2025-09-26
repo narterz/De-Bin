@@ -1,31 +1,31 @@
 export type UploadedFile = {
-    id: string;
+    id?: string;
     file: string;
     fileName: string;
     fileSize: number;
     fileType: string;
-    status: "idle" | "loading" | "success" | "failure";
+    fileNameShortened?: string;
+    fileExtension?: string | false
+    status?: "idle" | "loading" | "success" | "failure"; //idle: validated files, success: converted files
     error?: string;
 };
 
 export type FileConversion = {
     conversionList: AcceptedFilTypes[],
-    conversion: AcceptedFilTypes | ''
+    conversion: AcceptedFilTypes
 }
 
-export type UpdateFile = {
-    id: string,
+export type FileStatus = {
     status: "idle" | "loading" | "success" | "failure";
-    error?: string
+    error: string
 }
 
-export type AcceptedFilTypes = ".pdf" | ".csv" | ".png" | ".xlsx" | "xlsb" | ".jpg" 
+export type AcceptedFilTypes = ".pdf" | ".csv" | ".png" | ".xlsx" | ".xlsb" | ".jpg" | ".zip"
 
 export type AppState = {
     uploadedFiles: UploadedFile[];
     fileConversion: FileConversion
 };
-
 
 export type DialogState = {
     dialogIsOpen: boolean;
@@ -38,7 +38,12 @@ export type SelectState = {
     selectIsOpen: boolean;
 }
 
+export type TooltipState = {
+    tooltipIsOpen: boolean;
+}
+
 export type AppController = {
     dialogState: DialogState;
-    selectState: SelectState
+    selectState: SelectState;
+    tooltipState: TooltipState;
 };

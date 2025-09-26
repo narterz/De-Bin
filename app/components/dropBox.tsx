@@ -2,19 +2,19 @@
 
 import { IoIosImages } from "react-icons/io";
 import { Button } from "@/components/ui/button";
-import { Files, X } from "lucide-react";
+import { Files, X, Plus } from "lucide-react";
 import {  useRef, ChangeEvent, useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../lib/hooks";
-import { uploadFile, removeFile, setError, clearAllFiles } from "../lib/reducers/processFiles";
+import { uploadFile, removeFile, clearAllFiles } from "../lib/reducers/processFiles";
 import { openDialog } from "../lib/reducers/appController";
-import { validateSelectedFiles, serializeFile } from "../utils/fileValidation";
+import { serializeFile } from "../utils/fileValidation";
 import { processFile } from "../lib/selectors";
 import SelectedFiles from "./SelectedFiles";
-import { v4 as uuidv4 } from 'uuid';
 import { UploadedFile } from "../utils/types";
 
 export default function DropBox() {
   const [areSelectedFiles, setAreSelectedFiles] = useState<boolean>(false);
+  const [allSuccessFiles, setAllSuccessFiles] = useState<boolean>(false);
   const dispatch = useAppDispatch();
   const inputFile = useRef<HTMLInputElement>(null);
 
@@ -30,37 +30,20 @@ export default function DropBox() {
         header: 'Error: too many files',
         body: "De-bin only allows up to 3 files at a time. Please try again"
       }))
+      return
     }
     Promise.all(
       [...files].map(async file => {
-        const serializedFile = await serializeFile(file)
+        const serializedFile = await serializeFile(file);
         dispatch(uploadFile({
           file: serializedFile,
           fileName: file.name,
           fileSize: file.size,
           fileType: file.type,
-          status: "idle",
-          id: uuidv4()
-        }))
+        }));
       }))
   }
 
-  const handleDropBoxBtn = () => {
-    if(files.length > 0){
-      const allValidatedFiles = validateSelectedFiles(files);
-      for(let i = 0; i < allValidatedFiles.length; i++){
-        const failedFile = allValidatedFiles[i];
-        dispatch(setError({
-          id: failedFile.id,
-          status: failedFile.status,
-          error: failedFile.error
-        }))
-      }
-
-    } else {
-      inputFile.current?.click();
-    }
-  }
 
   const handleClearAll = () => {
     console.debug("Removing all files")
@@ -78,11 +61,28 @@ export default function DropBox() {
     }
   }
 
+  const handleConvertFiles = () => {
+
+  }
+
+  // Toggle areSelected whenever fileState changes
   useEffect(() => {
     console.log("selected files is: " + areSelectedFiles)
     if(files.length > 0) {
       setAreSelectedFiles(true)
     } else setAreSelectedFiles(false)
+  },[files]);
+
+  // Toggle allSuccessFiles whenever fileState changes
+  useEffect(() => {
+    const allFilesSuccessful = files.every((file) => !file.error);
+    if(allFilesSuccessful){
+      console.debug("All files contain no errors")
+      setAllSuccessFiles(true)
+    } else {
+      console.debug("One or more files contain errors")
+      setAllSuccessFiles(false)
+    }
   },[files])
 
   return (
@@ -114,8 +114,11 @@ export default function DropBox() {
       </div>
 
       <div className="display-none-transition w-1/2 h-1/5 flex flex-row justify-evenly items-center mb-5" id="dropBox-footer">
-        <Button onClick={() => inputFile.current?.click()} className="dropBox-btns">
-          <Files className="dropbox-icons" /> {files.length > 0 ? "Convert" : "Choose Files"}
+        <Button disabled={files.length === 3}  className="dropbox-btns" onClick={() => inputFile.current?.click()} >
+          <Plus className="dropbox-icons" /> Choose Files
+        </Button>
+        <Button disabled={!allSuccessFiles} className={`dropBox-btns ${areSelectedFiles ? "flex" : "hidden"}`}  onClick={() => inputFile.current?.click()} >
+          <Files className="dropbox-icons" /> Convert Files
         </Button>
         <Button className={`dropBox-btns ${areSelectedFiles ? "flex" : "hidden"}`} onClick={handleClearAll}>
           <X className="dropbox-icons"/> Clear all

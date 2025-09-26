@@ -7,14 +7,15 @@ import {
     convertToPng,
     convertToXlsb 
 } from "../../utils/fileConversions";
-import { AppState, UploadedFile, FileConversion, UpdateFile } from '@/app/utils/types';
-import { validateSelectedFiles } from '@/app/utils/fileValidation';
+import { v4 as uuidv4 } from 'uuid';
+import { AppState, UploadedFile, FileConversion, AcceptedFilTypes } from '@/app/utils/types';
+import { validateSelectedFile, shortenFileName, getFileExtension, getFileConversions } from '@/app/utils/fileValidation';
 
 const initialState: AppState = {
     uploadedFiles: [],
     fileConversion: {
         conversionList: [],
-        conversion: ''
+        conversion: '.zip'
     }
 }
 
@@ -25,8 +26,22 @@ const processFiles = createSlice({
     initialState,
     reducers: {
         uploadFile: (state, action: PayloadAction<UploadedFile>) => {
-            const { file, fileName, fileSize, fileType, status, id } = action.payload;
-            state.uploadedFiles.push({ file, fileName, fileSize, fileType, status, id });
+            const { file, fileName, fileSize, fileType } = action.payload;
+            const id = uuidv4();
+            const fileNameShortened = shortenFileName(fileName);
+            const fileExtension = getFileExtension(action.payload);
+            let fileConversionList: FileConversion = initialState.fileConversion;
+            const { status, error } = validateSelectedFile({file, fileName, fileSize, fileType});
+            if (fileExtension) {
+                const conversionResult = getFileConversions(fileExtension as AcceptedFilTypes);
+                if (conversionResult) {
+                    fileConversionList = conversionResult;
+                }
+            }
+            const { conversionList, conversion } = fileConversionList;
+            state.uploadedFiles.push({ file, id, fileNameShortened, fileExtension, fileName, fileSize, fileType, status, error });
+            state.fileConversion.conversionList = conversionList;
+            state.fileConversion.conversion = conversion;
         },
         removeFile: (state, action: PayloadAction<UploadedFile['fileName']>) => {
             const index = state.uploadedFiles.findIndex(file => file.fileName === action.payload);
@@ -38,30 +53,15 @@ const processFiles = createSlice({
           state.uploadedFiles = initialState.uploadedFiles;
           state.fileConversion = initialState.fileConversion; 
         },
-        updateStatus: (state, action: PayloadAction<UpdateFile>) => {
-            const { id, status } = action.payload;
-            const updatedFile = state.uploadedFiles.find((file) => file.id === id);
-            if (updatedFile) {
-                updatedFile.status = status
-            }
-        },
         setFileConversion: (state, action: PayloadAction<FileConversion['conversion']>) => {
-            state.fileConversion.conversion = action.payload
+            state.fileConversion.conversion = action.payload;
         },
         updateFileConversions: (state, action: PayloadAction<FileConversion>) => {
             state.fileConversion.conversionList = action.payload.conversionList;
             state.fileConversion.conversion = action.payload.conversion;
-        },
-        setError: (state, action: PayloadAction<UpdateFile>) => {
-            const { id, status, error } = action.payload;
-            const updatedFile = state.uploadedFiles.find((file) => file.id === id);
-            if (updatedFile) {
-                updatedFile.status = status;
-                updatedFile.error = error
-            }
-        },
+        }
     }
 })
 
-export const { uploadFile, removeFile, updateStatus, setError, setFileConversion, clearAllFiles } = processFiles.actions;
+export const { uploadFile, removeFile, setFileConversion, clearAllFiles, updateFileConversions } = processFiles.actions;
 export default processFiles.reducer;

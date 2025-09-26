@@ -4,9 +4,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { useAppDispatch, useAppSelector } from "../lib/hooks";
 import { appController, processFile } from "../lib/selectors";
 import { toggleSelect } from "../lib/reducers/appController";
-import { setFileConversion } from "../lib/reducers/processFiles";
 import { AcceptedFilTypes } from "../utils/types";
-import { useEffect } from "react";
+
+//TODO: Change color of placeholder text and icon carrot
 
 export default function FileTypeSelect(){
     const dispatch = useAppDispatch();
@@ -28,10 +28,10 @@ export default function FileTypeSelect(){
 
     return (
         <Select onValueChange={handleSelection} onOpenChange={handleToggleSelect} >
-            <SelectTrigger className="bg-black text-accent border-none flex items-center justify-end w-1/2">
-                <SelectValue placeholder={fileState.conversion}/>
+            <SelectTrigger className="bg-accent text-white border-none flex items-center justify-end w-1/2">
+                <SelectValue placeholder={fileState.conversion} className="text-black placeholder-text-black"/>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="text-black bg-white">
                 <SelectGroup>
                     {fileState.conversionList.map((type: AcceptedFilTypes) => (
                         <SelectItem key={type} value={type}>

@@ -1,7 +1,5 @@
-import { AppState, UploadedFile, AcceptedFilTypes, FileConversion, UpdateFile } from "./types";
-import mime from 'mime-types';
-
-// ############### File mutations
+import { UploadedFile, AcceptedFilTypes, FileConversion, FileStatus,} from "./types";
+import mime from "mime-types";
 
 // Serializes a file as base64 string to satisfy redux serialization standards
 export const serializeFile = (file: File): Promise<string> => {
@@ -13,93 +11,80 @@ export const serializeFile = (file: File): Promise<string> => {
     });
 };
 
-export const shortenFileName = (file: UploadedFile['fileName']): string => {
+export const shortenFileName = (file: string): string => {
     const fileNameShort = file.substring(0, 13);
     return `${fileNameShort}...`;
 };
 
 export const getFileExtension = (file: UploadedFile): string | false => {
-    const extension = file.fileName.slice(file.fileName.lastIndexOf('.'))
-    if(extension){
-        return extension
+    const extension = file.fileName.slice(file.fileName.lastIndexOf("."));
+    if (extension) {
+        return extension;
     } else {
-        return mime.extension(file.fileType)
+        return mime.extension(file.fileType);
     }
-}
+};
 
-export const convertFileSize = (fileSize: UploadedFile['fileSize']) => {
+export const convertFileSize = (fileSize: UploadedFile["fileSize"]) => {
     const conversionKb = fileSize / 1024;
-    const conversionMb = fileSize / ( 1024 * 1024)
-    const finalConversion = conversionKb >= 1000 
-        ? `${conversionMb.toFixed(2)}.mb` 
-        :  `${conversionKb.toFixed(2)}.kb`
-    return finalConversion
-}
+    const conversionMb = fileSize / (1024 * 1024);
+    const finalConversion =
+        conversionKb >= 1000
+            ? `${conversionMb.toFixed(2)}.mb`
+            : `${conversionKb.toFixed(2)}.kb`;
+    return finalConversion;
+};
 
-export const getFileConversions = (fileExtension: string) => {
-    const conversionList:FileConversion['conversionList'] = [ ".pdf", ".csv", ".jpg", '.png' ];
-    const chosenFileExtension = fileExtension as AcceptedFilTypes;
-    if(fileExtension === 'xlsx'){
+export const getFileConversions = (fileExtension: AcceptedFilTypes | undefined): FileConversion => {
+    const conversionList: AcceptedFilTypes[] = [ ".pdf", ".csv", ".jpg", ".png", ".zip" ];
+    if (fileExtension === ".xlsx") {
         return {
-            conversionList: conversionList + 'xlsb',
-            conversion: 'xlsb'
-        }
-    } else if (fileExtension === 'xlsb'){
-        return {
-            conversionList: conversionList + 'xlsx',
-            conversion: 'xlsx'
-        }
-    } else if (conversionList.includes(chosenFileExtension)){
-        return {
-            conversionList: conversionList.slice(conversionList.indexOf(chosenFileExtension), 1),
-            conversion: ''
-        }
+            conversionList: [...conversionList, ".xlsb"],
+            conversion: ".xlsb",
+        };
     }
+    if (fileExtension === ".xlsb") {
+        return {
+            conversionList: [...conversionList, ".xlsx"],
+            conversion: ".xlsx",
+        };
+    }
+    if (fileExtension && conversionList.includes(fileExtension)) {
+        // Pick the first available conversion as default, or ".zip" if none
+        const filteredList = conversionList.filter(ext => ext !== fileExtension);
+        return {
+            conversionList: filteredList,
+            conversion: filteredList[0] || ".zip",
+        };
+    }
+    return {
+        conversionList,
+        conversion: ".zip"
+    };
 }
 
-// ############### File validations
-
-const validateFileSize = (file: UploadedFile): UpdateFile => {
+export function validateSelectedFile(file: UploadedFile): FileStatus {
     const MAX_FILE_SIZE_MB = 3;
     const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+    const acceptedFileTypes = [ ".pdf", ".csv", ".png", ".xlsx", "xlsb", ".jpg", ".zip",];
+    // validate the file size
     if (file.fileSize > MAX_FILE_SIZE_BYTES) {
         return {
-            id: file.id,
-            status: 'failure',
+            status: "failure",
             error: `${file.fileName} is too large. File size can be no more than 3mb`,
         };
-    } else {
-        return {
-            id: file.id,
-            status: 'loading',
-            error: ''
+    }
+    // validate file extension
+    if (file.fileExtension) {
+        if (!acceptedFileTypes.includes(file.fileExtension)) {
+            return {
+                status: "idle",
+                error: "",
+            };
         }
     }
-};
-
-const validateFileExtension = (file: UploadedFile): UpdateFile => {
-    const acceptedFileTypes = [".pdf" , ".csv" , ".png" , ".xlsx" , "xlsb" , ".jpg"];
-    if (!acceptedFileTypes.includes(file.fileType)) {
-        return {
-            id: file.id,
-            status: 'failure',
-            error: `${file.fileName} is an unsupported format ${file.fileType}.`,
-        };
-    } else {
-        return {
-            id: file.id,
-            status: 'loading',
-            error: ''
-        }
-    }
-};
-
-// Returns array of failed files if any or true if none
-export function validateSelectedFiles(files: UploadedFile[]): UpdateFile[] {
-    const allValidations = files.map((file) => [
-        validateFileSize(file),
-        validateFileExtension(file)
-    ]).flat();
-    const failedValidations = allValidations.filter((validation: UpdateFile) => validation.status === 'failure');
-    return failedValidations ? failedValidations : allValidations
+    return {
+        status: "idle",
+        error: "",
+    };
 }
