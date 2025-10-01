@@ -1,6 +1,5 @@
 import { Trash, File, MoveRight, X } from "lucide-react";
-import { UploadedFile } from "../utils/types";
-import { shortenFileName, convertFileSize } from "../utils/fileValidation";
+import { FileMetadata, FileState } from "../utils/types";
 import FileTypeSelect from "./FileTypeSelect";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -10,7 +9,7 @@ import { appController } from "../lib/selectors";
 
 export default function SelectedFiles(
     { file, onRemoveFile }: 
-    { file: UploadedFile, onRemoveFile: (fileName: UploadedFile['fileName']) => void }){
+    { file: FileState, onRemoveFile: (id: FileMetadata['id']) => void }){
     const dispatch = useAppDispatch();
     const tooltipState = useAppSelector(appController).tooltipState;
 
@@ -26,36 +25,36 @@ export default function SelectedFiles(
 
             <div className="selected-file-section w-1/3">
                 <Tooltip onOpenChange={handleTooltipHover}>
-                    { file.error 
+                    { file.fileStatus.error 
                         ? <>
                             <TooltipTrigger className="bg-accent">
                                 <X className="selected-file-icons bg-error"/>
                             </TooltipTrigger>
-                            <TooltipContent className="text-black">{`${file.status}: ${file.error}`}</TooltipContent>
+                            <TooltipContent className="text-black">{`${file.fileStatus.status}: ${file.fileStatus.error}`}</TooltipContent>
                         </>
 
                         : <>
                             <TooltipTrigger className="bg-accent w-1/4 flex items-center justify-center h-1/2 rounded-lg">
                                 <File className="selected-file-icons bg-success"/>
                             </TooltipTrigger>
-                            <TooltipContent className="text-black">{file.fileName}</TooltipContent>
+                            <TooltipContent className="text-black">{file.metadata.fileName}</TooltipContent>
                             </>
                     }
                 </Tooltip>
-                <p>{shortenFileName(file.fileName)}</p>
+                <p>{file.metadata.fileNameShortened}</p>
             </div>
 
             <div className="selected-file-section w-1/3 border-l border-r border-black p-2">
-                <p>{file.fileExtension}</p>
+                <p>{file.metadata.fileExtension}</p>
                 <MoveRight className="text-black" />
                 <FileTypeSelect />
             </div>
 
             <div className="selected-file-section w-1/3">
-                <p>{convertFileSize(file.fileSize)}</p>
+                <p>{file.metadata.fileSize}</p>
                 <Button 
                     className="icon-btn selected-files-btn bg-accent" 
-                    onClick={() => onRemoveFile(file.fileName)}>
+                    onClick={() => onRemoveFile(file.metadata.id)}>
                     <Trash className="selected-file-icons cursor-pointer"/>
                 </Button>
             </div>

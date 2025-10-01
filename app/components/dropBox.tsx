@@ -10,7 +10,7 @@ import { openDialog } from "../lib/reducers/appController";
 import { serializeFile } from "../utils/fileValidation";
 import { processFile } from "../lib/selectors";
 import SelectedFiles from "./SelectedFiles";
-import { UploadedFile } from "../utils/types";
+import { FileMetadata } from "../utils/types";
 
 export default function DropBox() {
   const [areSelectedFiles, setAreSelectedFiles] = useState<boolean>(false);
@@ -18,7 +18,7 @@ export default function DropBox() {
   const dispatch = useAppDispatch();
   const inputFile = useRef<HTMLInputElement>(null);
 
-  const files = useAppSelector(processFile).uploadedFiles;
+  const files = useAppSelector(processFile).files;
 
   const handleFileUpload = ( e: ChangeEvent<HTMLInputElement> ) => {
     let files: FileList | null = e.target.files;
@@ -53,9 +53,10 @@ export default function DropBox() {
     }
   }
 
-  const handleRemoveFile = (fileName: UploadedFile['fileName']) => {
-    console.debug("Removing file: " + fileName)
-    dispatch(removeFile(fileName))
+  const handleRemoveFile = (id: FileMetadata['id']) => {
+    const file = files.find(file => file.metadata.id === id);
+    console.debug("Removing file: " + file?.metadata.fileName)
+    dispatch(removeFile(id))
     if (inputFile.current) {
       inputFile.current.value = "";
     }
@@ -75,7 +76,7 @@ export default function DropBox() {
 
   // Toggle allSuccessFiles whenever fileState changes
   useEffect(() => {
-    const allFilesSuccessful = files.every((file) => !file.error);
+    const allFilesSuccessful = files.every((file) => !file.fileStatus.error);
     if(allFilesSuccessful){
       console.debug("All files contain no errors")
       setAllSuccessFiles(true)
@@ -104,7 +105,7 @@ export default function DropBox() {
         />
         { files.length > 0 
           ? files.map((file) => (
-            <SelectedFiles file={file} onRemoveFile={handleRemoveFile} key={`selected-file-${file.fileName}`}/>
+            <SelectedFiles file={file} onRemoveFile={handleRemoveFile} key={`selected-file-${file.metadata.fileName}`}/>
           ))
           : <div className="h-full w-full flex flex-col items-center justify-around m-5">
                 <p>Drag and drop your files here or press the button below to select files</p>
