@@ -1,9 +1,20 @@
-import { FileConversion, FileMetadata, FileState } from "./types";
+import { FileConversion, FileMetadata, FileState, FileStatus } from "./types";
 import { jsPDF } from "jspdf";
 
-// Return type is output of various conversion functions
-export default async function handleFileConversion(file: FileState){
+/* 
+    Things to learn:
+    - What is a blob
+    - Promises and promise arguments
+
+*/
+
+// Return type is Promise<FileState>
+export default async function handleFileConversion(file: FileState): Promise<FileState> {
     console.debug("handleFileConversion called. Routing user to conversion function")
+    let chosenFile = file;
+    if(chosenFile.metadata.fileExtension === '.xlsb' && chosenFile.fileConversions?.conversion !== '.xlsx'){
+        chosenFile = await decompressXlsb(file)
+    }
     switch(file.fileConversions?.conversion){
         case ".pdf":
             const pdfConversion = await convertToPdf(file);
@@ -23,60 +34,140 @@ export default async function handleFileConversion(file: FileState){
     }
 }
 
-async function convertToPdf(file: FileState){
-    const capitalizedFileExtension = typeof file.metadata.fileExtension === "string"
-        ? file.metadata.fileExtension.slice(1).toUpperCase()
-        : "";
-    const reader = new FileReader();
-
-    reader.onload = (event: ProgressEvent<FileReader>) => {
-        const pdf = new jsPDF();
-    
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-    
-        pdf.addImage(file.metadata.file, capitalizedFileExtension, 0, 0, pageWidth, pageHeight)
-        pdf.save(`${file.metadata.fileName.split(".")[0]}.pdf`);
+const conversionFailureResponse = (file: FileState): FileState => {
+    return {
+        ...file,
+        fileStatus: {
+            status: "failure",
+            error: `${file.fileConversions?.conversion} conversion failed`
+        }
     }
+}
 
-    reader.onerror= (event: ProgressEvent<FileReader>) => {
-        console.error(`Error reading ${file.metadata.fileExtension} file: ${file.metadata.fileName}`)
+const conversionSuccessResponse = (newMetadata: FileMetadata, file: FileState): FileState => {
+    return {
+        metadata: newMetadata,
+        fileStatus: {
+            status: "success",
+            error: ""
+        },
+        fileConversions: file.fileConversions
     }
-
-    // Read file as base64
-
-    const excelToPDF = () => {
-        const excelFile = file.metadata.fileExtension === '.xlsb' ? decompressXlsb(file.metadata) : file 
-
-    }
-    
-    
 }
 
-function decompressXlsb(file: FileMetadata){
+async function convertToPdf(file: FileState): Promise<FileState> {
+    return new Promise((resolve, reject) => {
+        try {
 
+            // Convert xlxb-->xlsx beforehand
+            if(file.metadata.fileExtension === 'xlsb'){
+                
+            }
+
+            const capitalizedFileExtension = typeof file.metadata.fileExtension === "string"
+                ? file.metadata.fileExtension.slice(1).toUpperCase()
+                : "";
+            
+            const pdf = new jsPDF();
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            
+            pdf.addImage(file.metadata.file, capitalizedFileExtension, 0, 0, pageWidth, pageHeight);
+            
+            const pdfBlob = pdf.output('blob');
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+            
+            // Create new FileState with converted PDF data
+            const newMetadata: FileMetadata = {
+                ...file.metadata,
+                file: pdfUrl, // Store the blob URL
+                fileName: `${file.metadata.fileName.split(".")[0]}.pdf`,
+                fileType: "application/pdf",
+                fileExtension: ".pdf",
+                fileSize: pdfBlob.size
+            }
+            const newFileState = conversionSuccessResponse(newMetadata, file)
+            resolve(newFileState);
+        } catch (error) {
+            console.error(error)
+            reject(conversionFailureResponse(file))
+        }
+    });
 }
 
-const convertToCsv = (file: FileState) => {
+async function decompressXlsb(file: FileState): Promise<FileState>{
+    return new Promise((resolve, reject) => {
+        try {
 
+        } catch (err) {
+            console.error(err);
+            reject(conversionFailureResponse(file))
+        }
+    })
 }
 
-const convertToExcel = (file: FileState) => {
-
+const convertToCsv = (file: FileState): FileState => {
+    // TODO: Implement CSV conversion
+    return {
+        ...file,
+        fileStatus: {
+            status: "failure",
+            error: "CSV conversion not yet implemented"
+        }
+    };
 }
 
-const convertToPng = (file: FileState) => {
-
+const convertToExcel = (file: FileState): FileState => {
+    // TODO: Implement Excel conversion
+    return {
+        ...file,
+        fileStatus: {
+            status: "failure",
+            error: "Excel conversion not yet implemented"
+        }
+    };
 }
 
-const convertToJpg = (file: FileState) => {
-
+const convertToPng = (file: FileState): FileState => {
+    // TODO: Implement PNG conversion
+    return {
+        ...file,
+        fileStatus: {
+            status: "failure",
+            error: "PNG conversion not yet implemented"
+        }
+    };
 }
 
-const convertToDocx = (file: FileState) => {
-
+const convertToJpg = (file: FileState): FileState => {
+    // TODO: Implement JPG conversion
+    return {
+        ...file,
+        fileStatus: {
+            status: "failure",
+            error: "JPG conversion not yet implemented"
+        }
+    };
 }
 
-const compressFile = (file: FileState) => {
+const convertToDocx = (file: FileState): FileState => {
+    // TODO: Implement DOCX conversion
+    return {
+        ...file,
+        fileStatus: {
+            status: "failure",
+            error: "DOCX conversion not yet implemented"
+        }
+    };
+}
 
+const compressFile = (file: FileState): FileState => {
+    // TODO: Implement file compression
+    return {
+        ...file,
+        fileStatus: {
+            status: "failure",
+            error: "File compression not yet implemented"
+        }
+    };
 }
