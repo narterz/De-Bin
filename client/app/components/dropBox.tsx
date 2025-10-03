@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Files, X, Plus } from "lucide-react";
 import {  useRef, ChangeEvent, useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../lib/hooks";
-import { uploadFile, removeFile, clearAllFiles } from "../lib/reducers/processFiles";
+import { uploadFile, removeFile, clearAllFiles, uploadFileToBackend } from "../lib/reducers/processFiles";
 import { openDialog } from "../lib/reducers/appController";
 import { serializeFile } from "../utils/fileValidation";
 import { processFile } from "../lib/selectors";
@@ -84,7 +84,17 @@ export default function DropBox() {
       console.debug("One or more files contain errors")
       setAllSuccessFiles(false)
     }
-  },[files])
+  }, [files])
+  
+  // Whenever a file is set in the frontend, upload it to the backend
+  useEffect(() => {
+    const loadingFiles = files.filter(file => file.fileStatus.status === 'loading');
+    console.debug(`${loadingFiles.length} files detected`)
+    for (let i = 0; i > loadingFiles.length; i++){
+      uploadFileToBackend(loadingFiles[i])
+    }
+    
+  },[handleFileUpload])
 
   return (
     <div className={`flex flex-col items-center border-dashed border-4 border-black bg-accent ${areSelectedFiles ? "selected" : ""}`} id="dropBox">
@@ -95,14 +105,16 @@ export default function DropBox() {
       </div>
 
       <div className={`display-none-transition text-center flex-center-evenly  ${areSelectedFiles ? "selected" : ""}`} id="dropBox-body">
-        <input 
-          type="file"
-          ref={inputFile}
-          multiple
-          onChange={handleFileUpload}
-          id="dropFileInput"
-          className="hidden"
-        />
+        <form action="">
+          <input
+            type="file"
+            ref={inputFile}
+            multiple
+            onChange={handleFileUpload}
+            id="dropFileInput"
+            className="hidden"
+          />
+        </form>
         { files.length > 0 
           ? files.map((file) => (
             <SelectedFiles file={file} onRemoveFile={handleRemoveFile} key={`selected-file-${file.metadata.fileName}`}/>

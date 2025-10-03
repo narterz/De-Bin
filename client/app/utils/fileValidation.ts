@@ -1,14 +1,11 @@
-import { FileState, AcceptedFilTypes, FileConversion, FileStatus, FileMetadata,} from "./types";
+import { AcceptedFilTypes, FileConversion, FileStatus, FileMetadata,} from "./types";
 import mime from "mime-types";
 
 // Serializes a file as base64 string to satisfy redux serialization standards
-export const serializeFile = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (error) => reject(error);
-    });
+export const serializeFile = async (file: File): Promise<string> =>
+{
+    const buffer = await file.arrayBuffer();
+    return btoa(String.fromCharCode(...new Uint8Array(buffer)));
 };
 
 export const shortenFileName = (file: string): string => {
@@ -16,12 +13,12 @@ export const shortenFileName = (file: string): string => {
     return `${fileNameShort}...`;
 };
 
-export const getFileExtension = (file: FileState): string | false => {
-    const extension = file.metadata.fileName.slice(file.metadata.fileName.lastIndexOf("."));
+export const getFileExtension = (file: FileMetadata): string | false => {
+    const extension = file.fileName.slice(file.fileName.lastIndexOf("."));
     if (extension) {
         return extension;
     } else {
-        return mime.extension(file.metadata.fileType);
+        return mime.extension(file.fileType);
     }
 };
 
@@ -79,13 +76,13 @@ export function validateSelectedFile(file: FileMetadata): FileStatus {
     if (file.fileExtension) {
         if (!acceptedFileTypes.includes(file.fileExtension)) {
             return {
-                status: "idle",
-                error: "",
+                status: "failure",
+                error: `File has unsupported format ${file.fileExtension}`,
             };
         }
     }
     return {
-        status: "idle",
+        status: "loading",
         error: "",
     };
 }
