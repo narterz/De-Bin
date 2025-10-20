@@ -1,8 +1,32 @@
+"use client"
+
 import Header from "./components/Header";
 import DropBox from "./components/dropBox";
-import Modal  from './components/Modal';
+import Modal from './components/Modal';
+
+import { useEffect } from "react";
+import axios from "axios";
 
 export default function Home() {
+  
+  useEffect(() => {
+    const cleanupBackendDir = async () => {
+      try {
+        const request = await axios.get('http://localhost:5000/api/cleanup')
+        const { status, error } = request.data;
+        if (status === 'success') {
+          console.debug("cleanupBackendDir: tmp clean")
+        } else {
+          throw new Error("cleanupBackendDir: Major server error. tmp directory is dirty. " + error)
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    window.addEventListener('beforeunload', cleanupBackendDir);
+    return () => window.removeEventListener('beforeunload', cleanupBackendDir)
+  },[])
+
   return (
     <div className="w-screen h-screen flex flex-col items-center justify-between">
       <Modal />

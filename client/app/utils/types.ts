@@ -38,8 +38,19 @@ export type AcceptedFilTypes =
     | ".zip"
     | ".jpeg";
 
+type DialogNames = 
+    | "tooManyFilesDialog"
+    | "loadingFilesDialog"
+    | "failureDialog"
+    | "majorFailureDialog"
+    | "alreadyAddedDialog"
+    | "none"
+        
+
+
 export type DialogState = {
     dialogIsOpen: boolean;
+    dialogName: DialogNames;
     dialogHeader?: string;
     dialogBody?: string;
     errorList?: string[];
@@ -57,4 +68,11 @@ export type AppController = {
     dialogState: DialogState;
     selectState: SelectState;
     tooltipState: TooltipState;
+    isMajorFailure: boolean;
 };
+
+export type BackendResponse = {
+    status: 'success' | 'failure';
+    error?: string
+}
+

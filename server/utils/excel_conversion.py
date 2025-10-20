@@ -5,7 +5,7 @@ from models import FileMetadata, FileConversion, FileStatus, FileState
 
 
 def xlsb_to_xlsx(file_state: FileState) -> FileState:
-    try:
+    pass
         
 
 def xlsx_to_xlsb(file_state: FileState) -> FileState:

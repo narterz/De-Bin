@@ -9,7 +9,7 @@ import { appController } from "../lib/selectors";
 
 export default function SelectedFiles(
     { file, onRemoveFile }: 
-    { file: FileState, onRemoveFile: (id: FileMetadata['id']) => void }){
+    { file: FileState, onRemoveFile: (file: FileState) => void }){
     const dispatch = useAppDispatch();
     const tooltipState = useAppSelector(appController).tooltipState;
 
@@ -47,14 +47,16 @@ export default function SelectedFiles(
             <div className="selected-file-section w-1/3 border-l border-r border-black p-2">
                 <p>{file.metadata.fileExtension}</p>
                 <MoveRight className="text-black" />
-                <FileTypeSelect />
+                {file.fileConversions && (
+                    <FileTypeSelect fileConversion={file.fileConversions} />
+                )}
             </div>
 
             <div className="selected-file-section w-1/3">
                 <p>{file.metadata.fileSize}</p>
                 <Button 
                     className="icon-btn selected-files-btn bg-accent" 
-                    onClick={() => onRemoveFile(file.metadata.id)}>
+                    onClick={() => onRemoveFile(file)}>
                     <Trash className="selected-file-icons cursor-pointer"/>
                 </Button>
             </div>

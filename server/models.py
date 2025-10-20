@@ -5,7 +5,7 @@ from typing import Optional, Union
 @dataclass
 class FileMetadata:
     id: Optional[str]
-    file: base64
+    file: str
     file_name: str
     file_size: Union[int, str]
     file_type: str
