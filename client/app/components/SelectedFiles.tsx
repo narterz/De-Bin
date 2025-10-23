@@ -1,4 +1,4 @@
-import { Trash, File, MoveRight, X } from "lucide-react";
+import { Trash, File, MoveRight, X, Download } from "lucide-react";
 import { FileMetadata, FileState } from "../utils/types";
 import FileTypeSelect from "./FileTypeSelect";
 import { Button } from "@/components/ui/button";
@@ -6,12 +6,15 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { toggleTooltip } from "../lib/reducers/appController";
 import { useAppDispatch, useAppSelector } from "../lib/hooks";
 import { appController } from "../lib/selectors";
+import { useEffect, useState } from "react";
 
 export default function SelectedFiles(
     { file, onRemoveFile }: 
-    { file: FileState, onRemoveFile: (file: FileState) => void }){
+        { file: FileState, onRemoveFile: (file: FileState) => void }) {
     const dispatch = useAppDispatch();
     const tooltipState = useAppSelector(appController).tooltipState;
+    const [originalFormat, setOriginalFormat] = useState<FileMetadata['fileExtension']>('');
+    const [isDownloadable, setIsDownloadable] = useState<boolean>(false)
 
     const handleTooltipHover = (open: any) => {
         if(!open) {
@@ -19,6 +22,21 @@ export default function SelectedFiles(
             dispatch(toggleTooltip());
         }
     }
+
+    const handleDownloadFile = () => {
+
+    }
+
+    useEffect(() => {
+        setOriginalFormat(file.metadata.fileExtension)
+    }, [])
+    
+    // If a files extension has changed, then it was converted and can now be downloaded
+    useEffect(() => {
+        if (file.metadata.fileExtension !== originalFormat) {
+            setIsDownloadable(true)
+        }
+    },[file])
 
     return (
         <div className="selected-files w-full h-1/4 flex flex-row border rounded shadow-lg bg-foreground text-black border border-black">
@@ -58,6 +76,12 @@ export default function SelectedFiles(
                     className="icon-btn selected-files-btn bg-accent" 
                     onClick={() => onRemoveFile(file)}>
                     <Trash className="selected-file-icons cursor-pointer"/>
+                </Button>
+                <Button
+                    className={`${isDownloadable} ? icon-btn selected-files-btn bg-accent : hidden`}
+                    onClick={() => handleDownloadFile()}
+                >
+                    <Download className="selected-file-icons cursor-pointer"/>
                 </Button>
             </div>
         </div>

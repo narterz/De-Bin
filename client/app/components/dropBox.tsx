@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Files, X, Plus } from "lucide-react";
 import {  useRef, ChangeEvent, useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../lib/hooks";
-import { uploadFile, removeFile, uploadFileToBackend, removeFileFromBackend } from "../lib/reducers/processFiles";
+import { uploadFile, removeFile, uploadFileToBackend, removeFileFromBackend, convertFile } from "../lib/reducers/processFiles";
 import { openDialog } from "../lib/reducers/appController";
 import { serializeFile, shortenFileName, getFileExtension, validateMetadata, validateDuplicateFile, getFileConversions } from "../utils/fileValidation";
 import { processFile } from "../lib/selectors";
 import SelectedFiles from "./SelectedFiles";
 import { FileMetadata, FileState, FileStatus, FileConversion, AcceptedFilTypes } from "../utils/types";
-import { tooManyFilesDialog, majorFailureDialog } from "../utils/dialogContent";
+import { tooManyFilesDialog, majorFailureDialog, failureDialog } from "../utils/dialogContent";
 import { v4 as uuidv4 } from 'uuid';
 
 export default function DropBox() {
@@ -65,6 +65,7 @@ export default function DropBox() {
           dispatch(uploadFile({ metadata, fileConversions, fileStatus }))
           return
         }
+        console.debug(metadata.fileName, "  has passed all validations")
 
         // Create or FileConversions
         if (metadata.fileExtension) {
@@ -75,7 +76,6 @@ export default function DropBox() {
         }
 
         // If the backend call fails open majorFailureDialog otherwise set our state
-        console.debug("The file status is: " + fileStatus.status)
         const fileState: FileState = {
           metadata: metadata,
           fileStatus: fileStatus,
@@ -137,7 +137,28 @@ const handleClearAll = () => {
   })();
 }
 
-  const handleConvertFiles = () => {
+  const handleConvertFiles = async () => {
+    if (!allSuccessFiles) {
+      console.error("Not all files are ready to be converted")
+      return
+    }
+    try {
+      for (const file of files) {
+        const response = await dispatch(convertFile(file)).unwrap();
+        const { fileName, fileExtension } = file.metadata;
+        const conversion  = file.fileConversions?.conversion
+        const { status, error } = response.fileState.fileStatus;
+
+        if (status === 'failure') {
+          throw new Error(`Failed to convert ${fileName} from ${fileExtension} to ${conversion}. ${error}`)
+        }
+      }
+
+    } catch (err) {
+      const failedFiles = files.filter(file => file.fileStatus.status === 'failure')
+      dispatch(openDialog(failureDialog(failedFiles)));
+      console.error(err)
+    }
 
   }
 
@@ -217,7 +238,7 @@ const handleClearAll = () => {
         <Button disabled={files.length === 3}  className="dropbox-btns" onClick={() => inputFile.current?.click()} >
           <Plus className="dropbox-icons" /> Choose Files
         </Button>
-        <Button disabled={!allSuccessFiles} className={`dropBox-btns ${areSelectedFiles ? "flex" : "hidden"}`}  onClick={() => inputFile.current?.click()} >
+        <Button disabled={!allSuccessFiles} className={`dropBox-btns ${areSelectedFiles ? "flex" : "hidden"}`}  onClick={() => handleConvertFiles()} >
           <Files className="dropbox-icons" /> Convert Files
         </Button>
         <Button className={`dropBox-btns ${areSelectedFiles ? "flex" : "hidden"}`} onClick={() => handleClearAll()}>

@@ -4,10 +4,16 @@ from dataclasses import asdict
 from dotenv import load_dotenv
 
 from models import FileMetadata, FileConversion, FileStatus, FileState
-from utils.excel_conversion import xlsb_to_xlsx, xlsx_to_xlsb
+
 from utils.handle_dir import clean_tmp, remove_file_from_tmp, create_tmp
+from utils.excel_conversion import convert_excel
+from utils.pdf_conversion import convert_to_pdf
+from utils.csv_conversion import convert_to_csv
+from utils.jpg_conversion import convert_to_jpg
+from utils.png_conversion import convert_to_png
 
 import os
+import json
 
 
 app = Flask(__name__)
@@ -96,66 +102,54 @@ def remove_file():
         app.logger.error(f"Major server error in remove_file: {str(e)}")
         return jsonify({'status': 'failure', 'error': str(e)}), 500
 
-
-@app.route("/api/decompressXlsb", methods=['POST'])
-def xlsbToXlsx(file_state: FileState) -> FileState:
+@app.route('/api/convertFile', methods=['POST'])
+async def convert_file() -> FileState:
     try:
-        if not request.is_json():
-            raise ValueError
-
-        frontend_request = request.get_json()
-
-        file_state = FileState(
-            metadata=FileMetadata(**frontend_request["metadata"]),
-            status=FileStatus(**frontend_request["status"]),
-            conversion=FileConversion(**frontend_request["conversion"])
-        )
+        file_state_json = request.form.get('fileState')
+        if not file_state_json:
+            raise ValueError("No fileState found in request")
         
-
-        converted_file = xlsb_to_xlsx(file_state)
-        return jsonify(asdict(converted_file)), 200
-
-    except ValueError as e:
-        return jsonify({'status': 'failure', 'error': f'Incoming request was not valid JSON: {str(e)}'}), 400
-    except Exception as e:
-        return jsonify({'status': 'failure', 'error': f'An unexpected error occurred: {str(e)}'}), 500
-
-
-@app.route("/api/compressXlsx", methods=['POST'])
-def xlsxToXlsb():
-    try:
-        if not request.is_json():
-            raise ValueError
-
-        frontend_request = request.get_json()
-
-        file_state = FileState(
-            metadata=FileMetadata(**frontend_request["metadata"]),
-            status=FileStatus(**frontend_request["status"]),
-            conversion=FileConversion(**frontend_request["conversion"])
-        )
+        file_state_dict = json.loads(file_state_json)
         
-        converted_file = xlsx_to_xlsb(file_state)
-        return jsonify(asdict(converted_file)), 200
+        file_id = file_state_dict['metadata']['id']
+        file_name = file_state_dict['metadata']['fileName']
+        current_extension = file_state_dict['metadata']['fileExtension']
+        conversion = file_state_dict['fileConversions']['conversion'][1]
+        
+        tmp_file_path = f"/tmp/{file_name}_{file_id}"
+        if not os.path.exists(tmp_file_path):
+            raise FileNotFoundError(f"File {tmp_file_path} not found")
 
-    except ValueError as e:
-        return jsonify({'status': 'failure', 'error': f'Incoming request was not valid JSON: {str(e)}'}), 400
+        # Switch case to determine where to send the file
+        with open(tmp_file_path, 'rb') as f:
+            content = f.read()
+            match conversion:
+                case 'pdf':
+                    content = await convert_to_pdf(content, current_extension)
+                case 'csv':
+                    content = await convert_to_csv(content, current_extension)
+                case 'jpg':
+                    content = await convert_to_jpg(content, current_extension)
+                # case 'zip':
+                #     pass
+                case 'png':
+                    content = await convert_to_png(content, current_extension)
+                case 'xlsx':
+                    content = await convert_excel(content, current_extension)
+                case 'xlsb':
+                    content = await convert_excel(content, current_extension)
+            
+        # If successful, update the metadata and fileStatus. Send it to frontend
+        
+         
+        return jsonify({ 'status': 'success', 'error': '' }), 200
+        
+    except json.JSONDecodeError as e:
+        app.logger.error(f"convert_file: Invalid JSON in fileState: {str(e)}")
+        return jsonify({'status': 'failure', 'error': 'Invalid fileState JSON'}), 400
     except Exception as e:
-        return jsonify({'status': 'failure', 'error': f'An unexpected error occurred: {str(e)}'}), 500
-
-
-@app.route("/api/convertToCsv", methods=['POST'])
-def excelToCSV():
-    try:
-        if not request.is_json():
-            raise ValueError
-
-        # Return xlsx file as FileState from module
-
-    except ValueError as e:
-        return jsonify({'status': 'failure', 'error': f'Incoming request was not valid JSON: {str(e)}'}), 400
-    except Exception as e:
-        return jsonify({'status': 'failure', 'error': f'An unexpected error occurred: {str(e)}'}), 500
+        app.logger.error(f"convert_file: Error processing file conversion: {str(e)}")
+        return jsonify({'status': 'failure', 'error': str(e)}), 500
 
 
 if __name__ == "__main__":

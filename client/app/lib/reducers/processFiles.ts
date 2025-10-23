@@ -1,7 +1,5 @@
 import { createSlice, PayloadAction, createAsyncThunk, } from '@reduxjs/toolkit';
-import  handleFileConversion  from "../../utils/fileConversions";
-import { FileState, FilesState, FileMetadata, FileConversion, AcceptedFilTypes, FileStatus } from '@/app/utils/types';
-import { validateMetadata, shortenFileName, getFileExtension, getFileConversions, convertFileSize, validateDuplicateFile } from '@/app/utils/fileValidation';
+import { FileState, FilesState, FileMetadata, FileStatus } from '@/app/utils/types';
 import axios from 'axios';
 
 const initialState: FilesState = {
@@ -10,12 +8,23 @@ const initialState: FilesState = {
 
 const backendURL = 'http://localhost:5000'
 
-export const convertFile = createAsyncThunk(
-    'deBin/convertFile',
-    async (file: FileState, thunkAPI) => {
-        const response = await handleFileConversion(file)
-        return response;
-    }
+export const convertFile = createAsyncThunk <
+    { fileState: FileState },
+    FileState,
+    { rejectValue: FileStatus }
+    >(
+        '/api/convertFile',
+        async ( fileState: FileState , thunkAPI) => {
+            const formData = new FormData();
+            formData.append('fileState', JSON.stringify(fileState))
+            try {
+                const response = await axios.post<FileState>(`${backendURL}/api/convertFile`, formData);
+                return { fileState: response.data };
+            } catch (err) {
+                const errorMsg = err instanceof Error ? err.message : String(err);
+                return thunkAPI.rejectWithValue({ status: 'failure', error: errorMsg });
+            }
+        }
 )
 
 export const uploadFileToBackend = createAsyncThunk<
@@ -88,13 +97,18 @@ const processFiles = createSlice({
     extraReducers: (builder) => {
         //convertFile
         builder.addCase(convertFile.pending, (state, action) => {
-            const fileID = action.meta.arg.metadata.id
-            updateFileStateStatus(state.files, fileID, "loading")
+            const fileState: FileState = action.meta.arg
+            console.debug(`Converting file ${fileState.metadata.fileName} from ${action.meta.arg.metadata.fileExtension} to ${action.meta.arg.fileConversions?.conversion}`)
+            const existingFileIndex = state.files.findIndex(file => file.metadata.id === action.meta.arg.metadata.id)
+            state.files[existingFileIndex].fileStatus = {
+                status: 'loading',
+                error: ''
+            }
         }),
-            builder.addCase(convertFile.fulfilled, (state, action) => {
-            const fileID = action.meta.arg.metadata.id
-            updateFileStateStatus(state.files, fileID, "success")
-
+        builder.addCase(convertFile.fulfilled, (state, action) => {
+            const existingFileIndex = state.files.findIndex(file => file.metadata.id === action.meta.arg.metadata.id)
+            state.files[existingFileIndex] = action.payload.fileState
+            console.debug(`File: ${action.meta.arg.metadata.fileName} has been converted to ${action.meta.arg.fileConversions?.conversion}`)
         }),
         builder.addCase(convertFile.rejected, (state, action) => {
             const fileID = action.meta.arg.metadata.id

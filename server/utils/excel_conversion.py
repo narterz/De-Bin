@@ -4,11 +4,14 @@ import os
 from models import FileMetadata, FileConversion, FileStatus, FileState
 
 
-def xlsb_to_xlsx(file_state: FileState) -> FileState:
+def convert_excel(file: bytes, ext: str) -> FileState:
+    pass
+
+def xlsb_to_xlsx(file: bytes, ext: str) -> FileState:
     pass
         
 
-def xlsx_to_xlsb(file_state: FileState) -> FileState:
+def xlsx_to_xlsb(file: bytes, ext: str) -> FileState:
     pass
 
 
