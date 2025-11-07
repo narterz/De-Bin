@@ -1,29 +1,56 @@
-import base64
 import pandas as pd
-import os
-from models import FileMetadata, FileConversion, FileStatus, FileState
+import subprocess, tempfile, os
+from io import BytesIO
 
 
-def convert_excel(file: bytes, ext: str) -> FileState:
-    pass
-
-def xlsb_to_xlsx(file: bytes, ext: str) -> FileState:
-    pass
+async def convert_excel(file: bytes, ext: str) -> bytes:
+    match ext.lower():
+        case 'xlsb':
+            content = await xlsb_to_xlsx(file)
+            return content
+        case 'xlsx':
+            content = await xlsx_to_xlsb(file)
+            return content
         
 
-def xlsx_to_xlsb(file: bytes, ext: str) -> FileState:
-    pass
+# Does not account for excel formatting, best used for sheets with raw data
+def xlsb_to_xlsx(file: bytes) -> bytes:
+    try:
+        input_buffer = BytesIO(file)
+        xls = pd.read_excel(input_buffer, engine='pyxlsb')
+        output_buffer = BytesIO()
+        
+        with pd.ExcelWriter(output_buffer, engine='openpyxl') as writer:
+            for sheet in df.sheet_names:
+                df = pd.read_excel(xls, sheet_name=sheet)
+                df.to_excel(writer, sheet_name=sheet, index=False)
+                
+        output_buffer.seek(0)   
+        return output_buffer.read()
+    
+    except Exception as e:
+                raise Exception(f"xlsb_to_xlsx: Failed to convert xlsb to xlsx → {e}") from e
+        
 
+def xlsx_to_xlsb(file: bytes) -> bytes:
+    try:
+        tmp_xlsx = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
+        tmp_xlsx.write(file)
+        tmp_xlsx.flush()
+        tmp_xlsx.close()
+        
+        out_dir = tempfile.mkdtemp()
+        subprocess.run([
+            "libreoffice", "--headless", "--convert-to", "xlsb:Calc8", "--outdir", out_dir, tmp_xlsx.name
+        ], check=True)
 
-def convert_single_xlsx_sheet(file_state: FileState) -> FileState:
-    pass
+        out_path = os.path.join(out_dir, os.path.basename(tmp_xlsx.name).replace(".xlsx", ".xlsb"))
+        with open(out_path, "rb") as f:
+            data = f.read()
 
-def convert_single_xlsb_sheet(file_state: FileState) -> FileState:
-    pass
-
-def convert_multiple_xlsb_sheets(file_state: FileState) -> FileState:
-    pass
-
-def convert_multiple_xlsx_sheets(file_state: FileState) -> FileState:
-    pass
-
+        os.remove(tmp_xlsx.name)
+        os.remove(out_path)
+        return data
+        
+    except Exception as e:
+        raise Exception(f"xlsx_to_xlsb: Failed to convert xlsx to xlsb → {e}") from e

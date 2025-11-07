@@ -125,7 +125,9 @@ async def convert_file() -> FileState:
             content = f.read()
             match conversion:
                 case 'pdf':
+                    app.logger.debug("Routing file to convert_to_pdf")
                     content = await convert_to_pdf(content, current_extension)
+                    new_file_metadata = return_file_state(content, file_state_dict['metadata'])
                 case 'csv':
                     content = await convert_to_csv(content, current_extension)
                 case 'jpg':
@@ -134,10 +136,12 @@ async def convert_file() -> FileState:
                 #     pass
                 case 'png':
                     content = await convert_to_png(content, current_extension)
-                case 'xlsx':
+                case 'xlsx' | 'xlsb' | 'xls':
+                    app.logger.debug("Routing file to convert_excel")
                     content = await convert_excel(content, current_extension)
-                case 'xlsb':
-                    content = await convert_excel(content, current_extension)
+                    new_file_metadata = return_file_state(content, file_state_dict['metadata'])
+                    
+                    
             
         # If successful, update the metadata and fileStatus. Send it to frontend
         
@@ -151,6 +155,9 @@ async def convert_file() -> FileState:
         app.logger.error(f"convert_file: Error processing file conversion: {str(e)}")
         return jsonify({'status': 'failure', 'error': str(e)}), 500
 
+def return_file_state(content: bytes, metadata: FileState['metadata']) -> FileState:
+    # Updates all values of FileMetadata for frontend to read
+    pass
 
 if __name__ == "__main__":
     # To run in development mode change FLASK_ENV to development in server env file
