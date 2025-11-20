@@ -1,11 +1,14 @@
+from curses import meta
+from importlib import metadata
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dataclasses import asdict
 from dotenv import load_dotenv
+import mimetypes
 
 from models import FileMetadata, FileConversion, FileStatus, FileState
 
-from utils.handle_dir import clean_tmp, remove_file_from_tmp, create_tmp
+from utils.handle_dir import clean_tmp, remove_file_from_tmp, create_tmp, update_file_name, update_file_size
 from utils.excel_conversion import convert_excel
 from utils.pdf_conversion import convert_to_pdf
 from utils.csv_conversion import convert_to_csv
@@ -127,7 +130,7 @@ async def convert_file() -> FileState:
                 case 'pdf':
                     app.logger.debug("Routing file to convert_to_pdf")
                     content = await convert_to_pdf(content, current_extension)
-                    new_file_metadata = return_file_state(content, file_state_dict['metadata'])
+                    file_state_dict = update_file_state(content, file_state_dict)
                 case 'csv':
                     content = await convert_to_csv(content, current_extension)
                 case 'jpg':
@@ -139,15 +142,9 @@ async def convert_file() -> FileState:
                 case 'xlsx' | 'xlsb' | 'xls':
                     app.logger.debug("Routing file to convert_excel")
                     content = await convert_excel(content, current_extension)
-                    new_file_metadata = return_file_state(content, file_state_dict['metadata'])
-                    
-                    
-            
-        # If successful, update the metadata and fileStatus. Send it to frontend
-        
-         
-        return jsonify({ 'status': 'success', 'error': '' }), 200
-        
+                    new_file_metadata = update_file_state(content, file_state_dict)
+        return jsonify(file_state_dict)
+
     except json.JSONDecodeError as e:
         app.logger.error(f"convert_file: Invalid JSON in fileState: {str(e)}")
         return jsonify({'status': 'failure', 'error': 'Invalid fileState JSON'}), 400
@@ -155,9 +152,39 @@ async def convert_file() -> FileState:
         app.logger.error(f"convert_file: Error processing file conversion: {str(e)}")
         return jsonify({'status': 'failure', 'error': str(e)}), 500
 
-def return_file_state(content: bytes, metadata: FileState['metadata']) -> FileState:
-    # Updates all values of FileMetadata for frontend to read
-    pass
+async def update_file_state(content: bytes, file_state: FileState) -> FileState:
+    try: 
+        old_file_name = file_state['metadata']['file_name']
+        new_ext = file_state['conversion']['conversion']
+        new_file_name = update_file_name(old_file_name, new_ext)
+        # upload file content to tmp
+        await create_tmp(new_file_name, content)
+        # update file size
+        new_file_path = f'/tmp/{new_file_name}'
+        new_file_size = await update_file_size(new_file_path)
+        # update file type
+        mime_type, _ = mimetypes.guess_type(new_file_path)
+        updated_file_type = mime_type if mime_type else "application/octet-stream"
+        new_file_state: FileState = {
+            "metadata": {
+                "file": content,
+                "file_name": new_file_name,
+                "file_size": new_file_size,
+                "file_type": updated_file_type,
+                "file_name_shortened": file_state['metadata']['file_name_shortened'],
+                "file_extension": new_ext
+            },
+            "status": file_state['status'],
+            "conversion": file_state['conversion']
+        }
+        return new_file_state
+    except Exception as e:
+        app.logger.error(f"Failed to update file state with error {str(e)}")
+        new_file_state: FileState = {
+            "metadata": file_state["metadata"],
+            "conversion": file_state['conversion'],
+            "status": { "status": "failure", 'error': str(e) }    
+        }
 
 if __name__ == "__main__":
     # To run in development mode change FLASK_ENV to development in server env file

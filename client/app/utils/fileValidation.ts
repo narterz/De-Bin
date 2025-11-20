@@ -33,10 +33,10 @@ export const convertFileSize = (fileSize: FileMetadata["fileSize"]) => {
             ? `${conversionMb.toFixed(2)}.mb`
             : `${conversionKb.toFixed(2)}.kb`;
     return finalConversion;
-};
+};''
 
 export const getFileConversions = (fileExtension: AcceptedFilTypes | undefined): FileConversion => {
-    const conversionList: AcceptedFilTypes[] = [ ".pdf", ".csv", ".jpg", ".png", ".zip", ".xlsb",  ".xlsx" ];
+    const conversionList: AcceptedFilTypes[] = [ ".pdf", ".csv", ".jpg", ".png", ".zip", ".xlsb",  ".xlsx" , ".txt"];
     if (fileExtension === ".xlsx") {
         return {
             conversionList: [...conversionList, ".xlsb"],

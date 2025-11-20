@@ -36,7 +36,8 @@ export type AcceptedFilTypes =
     | ".xlsb"
     | ".jpg"
     | ".zip"
-    | ".jpeg";
+    | ".jpeg"
+    | ".txt";
 
 type DialogNames = 
     | "tooManyFilesDialog"
@@ -74,5 +75,11 @@ export type AppController = {
 export type BackendResponse = {
     status: 'success' | 'failure';
     error?: string
+}
+
+export interface NavigationBtnContent {
+    title: string;
+    description: string,
+    file?: string;
 }
 

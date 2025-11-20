@@ -1,11 +1,14 @@
 from tkinter import Canvas
 import pandas as pd
+from server import app
 from io import BytesIO
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
+import mimetypes
+
 
 from utils.excel_conversion import xlsb_to_xlsx
 from models import FileState
@@ -13,11 +16,20 @@ from models import FileState
 def convert_to_pdf(file: bytes, ext: str) -> bytes:
     match ext:
         case 'csv':
+            app.logger.debug("[convert_to_pdf] Converting csv to pdf")
             return convert_csv_to_pdf(file)
         case 'xls' | 'xlsx' | 'xlsb':
+            app.logger.debug("[convert_to_pdf] Converting excel to pdf")
             return convert_excel_to_pdf(file, ext)
         case 'txt':
+            app.logger.debug("[convert_to_pdf] Converting txt to pdf")
             return convert_txt_to_pdf(file)
+        case 'png':
+            app.logger.debug("[convert_to_pdf] Converting png to pdf")
+            return convert_png_to_pdf(file)
+        case 'jpg':
+            app.logger.debug("[convert_to_pdf] Converting jpg to pdf")
+            return convert_jpg_to_pdf(file)
         case _:
             raise ValueError(f"Unsupported extension: {ext}")
 
@@ -78,6 +90,13 @@ def convert_csv_to_pdf(file: bytes) -> bytes:
     
     
 
-def convert_excel_to_pdf(file):
+def convert_excel_to_pdf(file: bytes) -> bytes:
     # If the extension is xlsb convert to xlsx first
+    pass
+
+
+def convert_png_to_pdf(file: bytes) -> bytes:
+    pass
+
+def convert_jpg_to_pdf(file: bytes) -> bytes:
     pass

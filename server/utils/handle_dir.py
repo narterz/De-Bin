@@ -2,7 +2,7 @@ from genericpath import isdir
 import os
 import shutil
 
-def create_tmp(filename, file):
+async def create_tmp(filename, file):
     dir_path = '/tmp'
     try:
         if not os.path.isdir(dir_path):
@@ -31,3 +31,14 @@ def remove_file_from_tmp(file_path):
         return { 'status': 'failure', 'error': str(e) }
     
     
+def update_file_name(old_file_name: str, new_ext: str) -> str:
+    old_ext_index = old_file_name.find('.')
+    return old_file_name[:old_ext_index] + f'.{new_ext}'
+
+async def update_file_size(path: str) -> str:
+    if not os.path.isdir(path):
+        raise FileNotFoundError(f"File not found in tmp")
+    
+    file_stat = os.stat(path)
+    return file_stat.st_size
+
