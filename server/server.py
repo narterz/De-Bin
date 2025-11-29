@@ -1,22 +1,21 @@
-from curses import meta
 from importlib import metadata
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dataclasses import asdict
-from dotenv import load_dotenv
 import mimetypes
+import os
+import json
 
 from models import FileMetadata, FileConversion, FileStatus, FileState
 
-from utils.handle_dir import clean_tmp, remove_file_from_tmp, create_tmp, update_file_name, update_file_size
+from utils.decorators import log_func, log_route
+from utils.handle_dir import clean_dir, remove_file, create_file, update_file_name, update_file_size
 from utils.excel_conversion import convert_excel
 from utils.pdf_conversion import convert_to_pdf
 from utils.csv_conversion import convert_to_csv
 from utils.jpg_conversion import convert_to_jpg
 from utils.png_conversion import convert_to_png
 
-import os
-import json
 
 
 app = Flask(__name__)
@@ -25,105 +24,80 @@ CORS(app)
 UPLOAD_FOLDER = "/tmp/"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-load_dotenv()
-
 # Returns updated FileStatus
 @app.route('/')
+@log_route
 def index():
     return "Backend is running", 200
 
 
 @app.route("/api/upload", methods=['POST'])
+@log_route
 def save_file() -> FileStatus:
-    file_status: FileStatus = {
-        "status": "idle",
-        "error": ""
-    }
-    try:
-        if 'file' not in request.files:
-            raise FileNotFoundError("No file part in the request")
-        
-        uploaded_file = request.files['file']
-        file_id = request.form.get('id')
-        file_name = request.form.get('file_name')
-        tmp_file_name = f"{file_name}_{file_id}"
-        
-        save_to_tmp = create_tmp(tmp_file_name, uploaded_file)
-        file_status['status'] = save_to_tmp['status']
-        file_status['error'] = save_to_tmp['error']
-        
-        if file_status['status'] == 'failure':
-            app.logger.error("save_file: Failed to save file in backend: %s", file_status['error'])
-            return jsonify(file_status), 500
-        else:
-            app.logger.info(f"save_file: Successfully added file {file_name} to /tmp folder")
-            return jsonify(file_status), 200
+    if 'file' not in request.files:
+        app.logger.error("save_file: File not found in request")
+        return jsonify({'status': 'failure', 'error': 'No file part in the request'}), 400
+    
+    uploaded_file = request.files['file']
+    file_id = request.form.get('id')
+    file_name = request.form.get('file_name')
+    if not file_id or not file_name:
+        return jsonify({'status': 'failure', 'error': 'Missing id or file_name'}), 400
+    
+    file_path = f"{file_name}_{file_id}"
+    create_tmp_file = create_file(file_path, uploaded_file)
+    if create_tmp_file['status'] == 'failure':
+        app.logger.error("save_file: Failed to save file: %s", create_tmp_file['error'])
+        return jsonify(create_tmp_file), 500
 
-    except FileNotFoundError as e:
-        app.logger.error("File could not be saved to backend. Check client side functions uploadFileToBackend, handleFileUpload and slice processFiles")
-        file_status["status"] = "failure"
-        file_status["error"] = f"Could not find file: {e}"
-        return jsonify(file_status), 400
-    except Exception as e:
-        app.logger.error("Major server error. We got some fixing to do...")
-        file_status["status"] = "failure"
-        file_status["error"] = f"Failed to save file: {e}"
-        return jsonify(file_status), 500
-
-
+    app.logger.info("save_file: Successfully added file %s to /tmp", file_name)
+    return jsonify({'status': 'success'}), 200
+  
 @app.route('/api/cleanup', methods=['GET'])
+@log_route
 def cleanup_tmp():
-    dir_response = clean_tmp('/tmp')
+    dir_response = clean_dir('/tmp')
     return jsonify({ 'status': dir_response['status'], 'error': dir_response['error'] })
         
 
 @app.route('/api/removeFile', methods=['POST'])
-def remove_file():
-    file_status: FileStatus = {
-        "status": "idle",
-        "error": ""
-    }
-    try:
-        file_id = request.form.get('id')
-        file_name = request.form.get('file_name')
-        if not file_id or not file_name:
-            raise FileNotFoundError("Missing id or file_name in request")
-        
-        tmp_file_path = f"/tmp/{file_name}_{file_id}"
-        remove_file_response = remove_file_from_tmp(tmp_file_path)
-        file_status['status'] = remove_file_response['status']
-        file_status['error'] = remove_file_response['error']
-        
-        if file_status['status'] == 'failure':
-            app.logger.error(f"remove_file: Failed to remove file {tmp_file_path}: {file_status['error']}")
-            return jsonify(file_status), 500
-        
-        app.logger.info(f"Successfully removed file {tmp_file_path}")
-        return jsonify(file_status), 200
+@log_route
+def remove_file() -> FileStatus:
+    file_id = request.form.get('id')
+    file_name = request.form.get('file_name')
+    if not file_id or not file_name:
+        app.logger.error("remove_file: file not found in request")
+        return jsonify({'status': 'failure', 'error': 'No file arg in the request'}), 400
     
-    except Exception as e:
-        app.logger.error(f"Major server error in remove_file: {str(e)}")
-        return jsonify({'status': 'failure', 'error': str(e)}), 500
+    file_path = f"{file_name}_{file_id}"
+    remove_file_response = remove_file(file_path)
+    if remove_file_response['status'] == 'failure':
+        app.logger.error("remove_file: Failed to remove file: %s", remove_file['error'])
+        return jsonify(remove_file_response), 500
+    
+    app.logger.info("remove_file: Successfully removed file %s", file_name)
+    return jsonify(remove_file_response), 200
 
 @app.route('/api/convertFile', methods=['POST'])
+@log_route
 async def convert_file() -> FileState:
-    try:
-        file_state_json = request.form.get('fileState')
-        if not file_state_json:
-            raise ValueError("No fileState found in request")
-        
-        file_state_dict = json.loads(file_state_json)
-        
-        file_id = file_state_dict['metadata']['id']
-        file_name = file_state_dict['metadata']['fileName']
-        current_extension = file_state_dict['metadata']['fileExtension']
-        conversion = file_state_dict['fileConversions']['conversion'][1]
-        
-        tmp_file_path = f"/tmp/{file_name}_{file_id}"
-        if not os.path.exists(tmp_file_path):
-            raise FileNotFoundError(f"File {tmp_file_path} not found")
+    file_state_json = request.form.get('fileState')
+    if not file_state_json:
+        app.logger.error("convert_file: Request missing arg FileState")
+        return jsonify({'status': 'failure', 'error': 'FileState arg not present in request'})
+    
+    file_state_dict = json.loads(file_state_json)
+    file_id = file_state_dict['metadata']['id']
+    file_name = file_state_dict['metadata']['fileName']
+    current_extension = file_state_dict['metadata']['fileExtension']
+    conversion = file_state_dict['fileConversions']['conversion'][1]
+    tmp_file_path = f"/tmp/{file_name}_{file_id}"
 
-        # Switch case to determine where to send the file
+    if not os.path.exists(tmp_file_path):
+        app.logger.error("convert_file: Could not find file %s in /tmp", file_name)
+        return jsonify({'status': 'failure', 'error': 'File not found'})
+    
+    try:
         with open(tmp_file_path, 'rb') as f:
             content = f.read()
             match conversion:
@@ -142,15 +116,16 @@ async def convert_file() -> FileState:
                 case 'xlsx' | 'xlsb' | 'xls':
                     app.logger.debug("Routing file to convert_excel")
                     content = await convert_excel(content, current_extension)
-                    new_file_metadata = update_file_state(content, file_state_dict)
-        return jsonify(file_state_dict)
+                    file_state_dict = update_file_state(content, file_state_dict)
 
-    except json.JSONDecodeError as e:
-        app.logger.error(f"convert_file: Invalid JSON in fileState: {str(e)}")
-        return jsonify({'status': 'failure', 'error': 'Invalid fileState JSON'}), 400
+        app.logger.info(f"convert_file: Successfully converted file {file_name} from {current_extension} to {conversion}")
+        return jsonify(file_state_dict)
+    
     except Exception as e:
-        app.logger.error(f"convert_file: Error processing file conversion: {str(e)}")
-        return jsonify({'status': 'failure', 'error': str(e)}), 500
+        app.logger.error(f"convert_file: Failed to convert file {file_name} from {current_extension} to {conversion}")
+        return jsonify({'status': 'failure', 'error': f'Failed to convert file {str(e)}'})
+
+
 
 async def update_file_state(content: bytes, file_state: FileState) -> FileState:
     try: 
@@ -158,7 +133,7 @@ async def update_file_state(content: bytes, file_state: FileState) -> FileState:
         new_ext = file_state['conversion']['conversion']
         new_file_name = update_file_name(old_file_name, new_ext)
         # upload file content to tmp
-        await create_tmp(new_file_name, content)
+        await create_file(new_file_name, content)
         # update file size
         new_file_path = f'/tmp/{new_file_name}'
         new_file_size = await update_file_size(new_file_path)

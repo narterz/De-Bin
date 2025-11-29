@@ -2,7 +2,7 @@ from genericpath import isdir
 import os
 import shutil
 
-async def create_tmp(filename, file):
+async def create_file(filename, file):
     dir_path = '/tmp'
     try:
         if not os.path.isdir(dir_path):
@@ -13,7 +13,7 @@ async def create_tmp(filename, file):
     except Exception as e:
         return { 'status': 'failure', 'error': str(e) }
 
-def clean_tmp(file_path):
+def clean_dir(file_path):
     for file_name in os.listdir(file_path):
         tmp_path = os.path.join(file_path, file_name)
         try:
@@ -23,7 +23,7 @@ def clean_tmp(file_path):
             return { 'status': 'failure', 'error': str(e) }
     return { 'status': 'success', 'error': '' }
         
-def remove_file_from_tmp(file_path):
+def remove_file(file_path):
     try:
         os.remove(file_path)
         return { 'status': 'success', 'error': '' }

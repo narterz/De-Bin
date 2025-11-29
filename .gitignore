@@ -13,6 +13,7 @@ client/yarn-error.log*
 client/npm-debug.log*
 client/.pnpm-debug.log*
 client/.DS_Store
+client/.nvmrc
 
 # Python (server)
 server/__pycache__/

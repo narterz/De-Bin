@@ -19,13 +19,17 @@ export default function Header() {
   ]
 
   const handleDownload = async  (file: string) => {
+    const fileName = `file_example_${file}.${file.toLowerCase()}`;
+    console.debug("Downloading file: ", fileName);
+    const url = `/sample/${fileName}`
     try {
-      const fileName = `file_example_${file}` 
-      const path = `Dev/d-bin/client/public/sample/${fileName}`
-      console.debug("Downloading sample file: ", fileName)
-      saveAs(path, fileName)
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch file")
+      const blob = await response.blob();
+      saveAs(blob, fileName);
     } catch (err) {
-      console.error(`Sample ${file} does not exist locally`)
+      console.error(`Failed to download sample ${fileName}:`, err);
+      // Open failure dialog here
     }
   }
 

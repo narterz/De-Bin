@@ -1,6 +1,5 @@
-from tkinter import Canvas
 import pandas as pd
-from server import app
+from flask import current_app
 from io import BytesIO
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
@@ -16,19 +15,19 @@ from models import FileState
 def convert_to_pdf(file: bytes, ext: str) -> bytes:
     match ext:
         case 'csv':
-            app.logger.debug("[convert_to_pdf] Converting csv to pdf")
+            current_app.logger.debug("[convert_to_pdf] Converting csv to pdf")
             return convert_csv_to_pdf(file)
         case 'xls' | 'xlsx' | 'xlsb':
-            app.logger.debug("[convert_to_pdf] Converting excel to pdf")
+            current_app.logger.debug("[convert_to_pdf] Converting excel to pdf")
             return convert_excel_to_pdf(file, ext)
         case 'txt':
-            app.logger.debug("[convert_to_pdf] Converting txt to pdf")
+            current_app.logger.debug("[convert_to_pdf] Converting txt to pdf")
             return convert_txt_to_pdf(file)
         case 'png':
-            app.logger.debug("[convert_to_pdf] Converting png to pdf")
+            current_app.logger.debug("[convert_to_pdf] Converting png to pdf")
             return convert_png_to_pdf(file)
         case 'jpg':
-            app.logger.debug("[convert_to_pdf] Converting jpg to pdf")
+            current_app.logger.debug("[convert_to_pdf] Converting jpg to pdf")
             return convert_jpg_to_pdf(file)
         case _:
             raise ValueError(f"Unsupported extension: {ext}")
