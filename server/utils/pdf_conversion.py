@@ -1,60 +1,60 @@
 import pandas as pd
-from flask import current_app
+import logging
+
 from io import BytesIO
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-import mimetypes
+from models import FileStatus
 
+log = logging.getLogger(__name__)
 
-from utils.excel_conversion import xlsb_to_xlsx
-from models import FileState
+def convert_to_pdf(file: bytes, ext: str) -> bytes | FileStatus:
+    pdf_conversion_dict = {
+        "jpg": convert_jpg_to_pdf,
+        "png": convert_jpg_to_pdf,
+        "txt": convert_txt_to_pdf,
+        "xlsx": convert_excel_to_pdf,
+        "csv": convert_csv_to_pdf,
+    }
+    
+    func = pdf_conversion_dict.get(ext)
+    log.debug(f"Calling function {func.__name__}")
+    pdf_conversion = func(file)
+    
+    if pdf_conversion['status'] == 'error':
+        error_message = pdf_conversion['error']
+        log.error(f"{func.__name__}: Failed convert file to pdf. {error_message}")
+    else: log.debug(f"{func.__name__}: Successfully converted file to pdf")
+    
+    return pdf_conversion
 
-def convert_to_pdf(file: bytes, ext: str) -> bytes:
-    match ext:
-        case 'csv':
-            current_app.logger.debug("[convert_to_pdf] Converting csv to pdf")
-            return convert_csv_to_pdf(file)
-        case 'xls' | 'xlsx' | 'xlsb':
-            current_app.logger.debug("[convert_to_pdf] Converting excel to pdf")
-            return convert_excel_to_pdf(file, ext)
-        case 'txt':
-            current_app.logger.debug("[convert_to_pdf] Converting txt to pdf")
-            return convert_txt_to_pdf(file)
-        case 'png':
-            current_app.logger.debug("[convert_to_pdf] Converting png to pdf")
-            return convert_png_to_pdf(file)
-        case 'jpg':
-            current_app.logger.debug("[convert_to_pdf] Converting jpg to pdf")
-            return convert_jpg_to_pdf(file)
-        case _:
-            raise ValueError(f"Unsupported extension: {ext}")
-
-
-def convert_txt_to_pdf(file: bytes) -> bytes:
+def convert_txt_to_pdf(file: bytes) -> bytes | FileStatus:
     try: 
         txt = file.decode('utf-8', errors='ignore')
     except UnicodeDecodeError:
         txt = file.decode('latin-1')
     
-    buffer = BytesIO()
-    pdf = canvas.Canvas(buffer, pagesize=letter)
-    width, height = letter
-    
-    y = height - 50
-    
-    for line in txt.splitlines():
-        pdf.drawString(50, y, line)
-        y -= 15
-        if y < 50:
-            pdf.showPage()
-            y = height - 50
-    pdf.save()
-    buffer.seek(0)
-    return buffer.read()
+    try: 
+        buffer = BytesIO()
+        pdf = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
         
+        y = height - 50
+        
+        for line in txt.splitlines():
+            pdf.drawString(50, y, line)
+            y -= 15
+            if y < 50:
+                pdf.showPage()
+                y = height - 50
+        pdf.save()
+        buffer.seek(0)
+        return buffer.read()
+    except Exception as e:
+        return {"status": 'failure', "error": str(e)}
     
 def convert_csv_to_pdf(file: bytes) -> bytes:    
     buffer = BytesIO(file)

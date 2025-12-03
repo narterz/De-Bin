@@ -3,7 +3,7 @@ from functools import wraps
 from flask import request, current_app
 
 logging.basicConfig(
-    level=logging.info,
+    level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
@@ -46,7 +46,7 @@ def log_func(func):
         logger.info("Calling function %s with args: %s, kwargs: %s", func.__name__, args, kwargs)
         try:
             results = func(*args, **kwargs)
-            logger.info("Function %s returned %r", func.__name__, results)
+            logger.info(f"Function {func.__name__} returned {results}")
             return results
         except Exception:
             logger.exception("Function %s raised an exception", func.__name__)

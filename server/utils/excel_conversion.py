@@ -3,7 +3,7 @@ import subprocess, tempfile, os
 from io import BytesIO
 
 
-async def convert_excel(file: bytes, ext: str) -> bytes:
+async def convert_to_excel(file: bytes, ext: str) -> bytes:
     match ext.lower():
         case 'xlsb':
             content = await xlsb_to_xlsx(file)

@@ -11,7 +11,7 @@ import { serializeFile, shortenFileName, getFileExtension, validateMetadata, val
 import { processFile } from "../lib/selectors";
 import SelectedFiles from "./SelectedFiles";
 import { FileMetadata, FileState, FileStatus, FileConversion, AcceptedFilTypes } from "../utils/types";
-import { tooManyFilesDialog, majorFailureDialog, failureDialog } from "../utils/dialogContent";
+import { tooManyFilesDialog, majorFailureDialog, failureDialog, failedToUploadFile } from "../utils/dialogContent";
 import { v4 as uuidv4 } from 'uuid';
 
 export default function DropBox() {
@@ -67,7 +67,7 @@ export default function DropBox() {
         }
         console.debug(metadata.fileName, "  has passed all validations")
 
-        // Create or FileConversions
+        // Create FileConversions
         if (metadata.fileExtension) {
           const conversionResult = getFileConversions(metadata.fileExtension as AcceptedFilTypes);
           if (conversionResult) {
@@ -83,9 +83,12 @@ export default function DropBox() {
         }
         const fileObj: File = file
         const backendResponse = await dispatch(uploadFileToBackend({ fileState, fileObj })).unwrap();
+        console.debug("File successfully uploaded to backend.")
 
         if (backendResponse.fileStatus.status === 'failure') {
-          throw new Error(backendResponse.fileStatus.error)
+          console.error(backendResponse.fileStatus.error)
+          dispatch(openDialog(failedToUploadFile(fileState.metadata.fileNameShortened)))
+          return
         }
 
       } catch (err) {
@@ -140,6 +143,7 @@ const handleClearAll = () => {
   const handleConvertFiles = async () => {
     if (!allSuccessFiles) {
       console.error("Not all files are ready to be converted")
+      // Open failure dialog with this message
       return
     }
     try {

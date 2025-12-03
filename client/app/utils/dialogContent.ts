@@ -20,6 +20,16 @@ export const loadingFilesDialog = (): DialogState => {
     }
 }
 
+export const failedToUploadFile = (fileName: string | undefined): DialogState => {
+    console.debug("Opening failedToUploadFile")
+    return {
+        dialogName: "failedToUploadFile",
+        dialogIsOpen: true,
+        dialogHeader: "Failed to upload file",
+        dialogBody: `Failed to upload file ${fileName}`
+    }
+}
+
 export const failureDialog = (fileState: FileState[]): DialogState => {
     console.debug("Opening failureDialog")
     const duplicateFile = fileState.find(file => file.fileStatus.error.includes("Duplicate file"));

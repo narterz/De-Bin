@@ -33,6 +33,7 @@ export type AcceptedFilTypes =
     | ".csv"
     | ".png"
     | ".xlsx"
+    | ".xls"
     | ".xlsb"
     | ".jpg"
     | ".zip"
@@ -45,6 +46,7 @@ type DialogNames =
     | "failureDialog"
     | "majorFailureDialog"
     | "alreadyAddedDialog"
+    | "failedToUploadFile"
     | "none"
         
 

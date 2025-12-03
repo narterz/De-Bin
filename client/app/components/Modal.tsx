@@ -22,31 +22,32 @@ export default function Modal() {
         }
     };
 
+    // Control the opening loading and failure dialogs
     useEffect(() => {
         const pendingFiles = files.filter((file) => file.fileStatus.status === "loading");
         const failedFiles = files.filter((file) => file.fileStatus.status === "failure");
 
         if (pendingFiles.length > 0) {
-            console.debug(`Modal.tsx: ${pendingFiles.length} pending files detected`);
+            console.debug(`Modal.tsx: ${pendingFiles.length} pending file(s) detected`);
             dispatch(openDialog(loadingFilesDialog()))
         }
         
-        else if (failedFiles.length > 0) {
-            console.debug(`Modal.tsx: ${failedFiles.length} files detected`)
+        if (failedFiles.length > 0) {
+            console.debug(`Modal.tsx: ${failedFiles.length} failed  file(s) detected`)
             dispatch(closeDialog());
             dispatch(openDialog(failureDialog(failedFiles)))
         }
         
-        console.debug("Major failure is: " + majorFailure)
     }, [files]);
 
+    //
     useEffect(() => {
         if (dialogController.dialogIsOpen) {
             setTimeout(() => {
                 console.debug(`Closing ${dialogController.dialogName}`)
                 dispatch(closeDialog());
             },
-                dialogController.dialogName === 'loadingFilesDialog' ? 2000 : 5000
+                dialogController.dialogName === 'loadingFilesDialog' ? 2000 : 3000
             );
         }
     }, [dialogController.dialogIsOpen]);
