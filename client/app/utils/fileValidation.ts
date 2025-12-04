@@ -94,8 +94,6 @@ export function validateDuplicateFile(selectedFile: FileMetadata, presentFiles: 
         console.error(
             `validateDuplicateFile: File ${selectedFile.fileName} has already been selected`
         );
-    } else {
-        console.debug("No duplicates detected");
     }
 
     return {

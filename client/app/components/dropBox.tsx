@@ -65,7 +65,7 @@ export default function DropBox() {
           dispatch(uploadFile({ metadata, fileConversions, fileStatus }))
           return
         }
-        console.debug(metadata.fileName, "  has passed all validations")
+        console.debug(metadata.fileName, " has passed all validations")
 
         // Create FileConversions
         if (metadata.fileExtension) {
@@ -83,7 +83,6 @@ export default function DropBox() {
         }
         const fileObj: File = file
         const backendResponse = await dispatch(uploadFileToBackend({ fileState, fileObj })).unwrap();
-        console.debug("File successfully uploaded to backend.")
 
         if (backendResponse.fileStatus.status === 'failure') {
           console.error(backendResponse.fileStatus.error)
@@ -168,7 +167,6 @@ const handleClearAll = () => {
 
   // Toggle areSelected whenever fileState changes
   useEffect(() => {
-    console.log("selected files is: " + areSelectedFiles)
     if(files.length > 0) {
       setAreSelectedFiles(true)
     } else setAreSelectedFiles(false)
@@ -177,18 +175,11 @@ const handleClearAll = () => {
   // Toggle allSuccessFiles whenever fileState changes
   useEffect(() => {
     const allFilesSuccessful = files.every((file) => !file.fileStatus.error);
-    if(allFilesSuccessful){
-      console.debug("All files contain no errors")
-      setAllSuccessFiles(true)
-    } else {
-      console.debug("One or more files contain errors")
-      setAllSuccessFiles(false)
-    }
+    setAllSuccessFiles(allFilesSuccessful)
   }, [files])
     
   useEffect( () => {
     const idleFiles = files.filter(file => file.fileStatus.status === 'idle');
-    console.debug(`There are ${idleFiles.length} idle files`)
     if (idleFiles.length > 0) {
         fileListID.map(async statePayload => {
           try {

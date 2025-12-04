@@ -27,12 +27,14 @@ export default function SelectedFiles(
 
     }
 
+
     useEffect(() => {
         setOriginalFormat(file.metadata.fileExtension)
     }, [])
     
     // If a files extension has changed, then it was converted and can now be downloaded
     useEffect(() => {
+        console.debug(`Status of ${file.metadata.fileName} changed to ${file.fileStatus.status}`)
         if (file.metadata.fileExtension !== originalFormat) {
             setIsDownloadable(true)
         }

@@ -8,29 +8,35 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from models import FileStatus
+from utils.decorators import log_func
 
 log = logging.getLogger(__name__)
 
+@log_func
 def convert_to_pdf(file: bytes, ext: str) -> bytes | FileStatus:
     pdf_conversion_dict = {
-        "jpg": convert_jpg_to_pdf,
-        "png": convert_jpg_to_pdf,
-        "txt": convert_txt_to_pdf,
-        "xlsx": convert_excel_to_pdf,
-        "csv": convert_csv_to_pdf,
+        ".jpg": convert_jpg_to_pdf,
+        ".png": convert_jpg_to_pdf,
+        ".txt": convert_txt_to_pdf,
+        ".xlsx": convert_excel_to_pdf,
+        ".csv": convert_csv_to_pdf,
     }
     
     func = pdf_conversion_dict.get(ext)
+    if not func:
+        return { 'status': 'failure', 'error': f"No conversion function for extension {ext}" }
+    
     log.debug(f"Calling function {func.__name__}")
     pdf_conversion = func(file)
     
-    if pdf_conversion['status'] == 'error':
-        error_message = pdf_conversion['error']
-        log.error(f"{func.__name__}: Failed convert file to pdf. {error_message}")
-    else: log.debug(f"{func.__name__}: Successfully converted file to pdf")
-    
-    return pdf_conversion
+    if isinstance(pdf_conversion, dict):
+        log.error(f"{func.__name__}: Failed to convert file to pdf. {pdf_conversion.get('error', "Unknown error")}")
+        return pdf_conversion
+    else:
+        log.debug(f'{func.__name__}: Successfully converted file to pdf')
+        return pdf_conversion
 
+@log_func
 def convert_txt_to_pdf(file: bytes) -> bytes | FileStatus:
     try: 
         txt = file.decode('utf-8', errors='ignore')

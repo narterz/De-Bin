@@ -27,7 +27,7 @@ export const convertFile = createAsyncThunk <
 
                 return { fileState: response.data };
             } catch (err) {
-                console.error(`Failed to convert file ${fileState.metadata.fileName}. error: ${fileState.fileStatus.error}`)
+                console.error(`Failed to convert file ${fileState.metadata.fileName} error: ${err}`)
                 return thunkAPI.rejectWithValue(fileState)
             }
         }
@@ -63,12 +63,16 @@ export const uploadFileToBackend = createAsyncThunk<
 export const removeFileFromBackend = createAsyncThunk(
     '/api/removeFile',
     async (file: FileState, thunkAPI) => {
-        console.log(`removeFileFromBackend: Notifying backend to remove ${file.metadata.fileNameShortened} from /tmp`)
+        console.log(`Notifying backend to remove ${file.metadata.fileName}`)
         const formData = new FormData()
         formData.append('id', file.metadata.id || '');
         formData.append('file_name', file.metadata.fileName);
         try {
-            const response = await axios.post<FileStatus>(`${backendURL}/api/removeFile`, formData)
+            const response = await axios.post<FileStatus>(`${backendURL}/api/removeFile`, formData);
+
+            if (response.data.status === 'failure') {
+                return thunkAPI.rejectWithValue(response.data.error)
+            }
             return { status: response.data }
         } catch (err) {
             const errorMsg = err instanceof Error ? err.message : String(err);
@@ -101,9 +105,10 @@ const processFiles = createSlice({
     extraReducers: (builder) => {
         // convertFile
         builder.addCase(convertFile.pending, (state, action) => {
-            const fileState: FileState = action.meta.arg
-            console.debug(`${fileState.metadata.fileName} is being converted. Changing status to loading`);
-            const existingFileIndex = state.files.findIndex(file => file.metadata.id === action.meta.arg.metadata.id)
+            const fileState: FileState = action.meta.arg;
+            const fileName = fileState.metadata.fileName
+            console.debug(`${fileName} is being evaluated by backend.`);
+            const existingFileIndex = state.files.findIndex(file => fileState.metadata.id === file.metadata.id);
             state.files[existingFileIndex].fileStatus = {
                 status: 'loading',
                 error: ''
@@ -121,31 +126,33 @@ const processFiles = createSlice({
         }),
    
         builder.addCase(convertFile.rejected, (state, action) => {
-            const newFileState: FileState = action.meta.arg;
-            const fileName = newFileState.metadata.fileName
-            const currentExt = newFileState.metadata.fileExtension;
-            const preferredExt = newFileState.fileConversions?.conversion
-            console.error(`convertFile failed for file ${fileName} from ${currentExt} to ${preferredExt}`)
-            const existingFileIndex = state.files.findIndex(file => newFileState.metadata.id === file.metadata.id);
-            state.files[existingFileIndex] = newFileState
+            const fileID = action.meta.arg.metadata.id;
+            const fileName = action.meta.arg.metadata.fileName;
+            console.error(`Failed to convert file ${fileName}. Error: ${action.payload || 'Unknown error'}`);
+            const existingFileIndex = state.files.findIndex(file => file.metadata.id === fileID);
+                if (existingFileIndex !== -1) {
+                state.files[existingFileIndex].fileStatus = {
+                    status: 'failure',
+                    error: action.payload ? String(action.payload) : 'Conversion failed'
+                };
+            }
         })
 
         // uploadFileToBackend
         builder.addCase(uploadFileToBackend.pending, (state, action) => {
             const fileState = action.meta.arg.fileState;
             const fileName = fileState.metadata.fileName;
-            console.debug(`File: ${fileName} is being uploaded to backend. Changing status to loading`)
-            const existingFileIndex = state.files.findIndex(file => fileState.metadata.id === file.metadata.id)
-            state.files[existingFileIndex].fileStatus = {
-                status: 'loading',
-                error: ''
-            }
+            console.debug(`File: ${fileName} is being uploaded to backend.`)
+            state.files.push({
+                ...fileState,
+                fileStatus: { status: 'loading', error: '' }
+            })
         }),
             
         builder.addCase(uploadFileToBackend.fulfilled, (state, action) => {
             const fileName = action.meta.arg.fileState.metadata.fileName
             const newStatus = action.payload.fileStatus
-            console.debug(`File ${fileName} has successfully been uploaded to backend. Changing status to success`)
+            console.debug(`File ${fileName} has successfully been uploaded to backend.`)
             const existingFileIndex = state.files.findIndex(file => file.metadata.id === action.meta.arg.fileState.metadata.id)
             state.files[existingFileIndex].fileStatus = newStatus
         }),
@@ -162,10 +169,15 @@ const processFiles = createSlice({
         //removeFileFromBackend
         builder.addCase(removeFileFromBackend.fulfilled, (state, action) => {
             const fileID = action.meta.arg.metadata.id;
+            const fileToRemove = state.files.find(file => action.meta.arg.metadata.id === file.metadata.id)
+            console.debug(`Successfully removed file ${fileToRemove?.metadata.fileName}`)
             removeFileById(state.files, fileID)
         })
+
         builder.addCase(removeFileFromBackend.rejected, (state, action) => {
             const fileID = action.meta.arg.metadata.id;
+            const fileToRemove = state.files.find(file => action.meta.arg.metadata.id === file.metadata.id)
+            console.error(`Server error occurred while removing file ${fileToRemove?.metadata.fileName}. error: ${action.payload}`)
             removeFileById(state.files, fileID)
         })
     }

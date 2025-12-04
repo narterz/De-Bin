@@ -17,7 +17,7 @@ export default function Modal() {
 
     const handleCloseDialog = (open: any) => {
         if (!open) {
-            console.debug("Closing dialog");
+            console.debug(`Closing dialog ${dialogController.dialogName}`);
             dispatch(closeDialog());
         }
     };
@@ -28,12 +28,10 @@ export default function Modal() {
         const failedFiles = files.filter((file) => file.fileStatus.status === "failure");
 
         if (pendingFiles.length > 0) {
-            console.debug(`Modal.tsx: ${pendingFiles.length} pending file(s) detected`);
             dispatch(openDialog(loadingFilesDialog()))
         }
         
         if (failedFiles.length > 0) {
-            console.debug(`Modal.tsx: ${failedFiles.length} failed  file(s) detected`)
             dispatch(closeDialog());
             dispatch(openDialog(failureDialog(failedFiles)))
         }

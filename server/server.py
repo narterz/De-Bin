@@ -7,8 +7,8 @@ from tempfile import TemporaryDirectory
 
 from models import FileMetadata, FileConversion, FileStatus, FileState
 
-from utils.decorators       import log_route
-from utils.handle_dir       import remove_file_dir, create_file, update_file_name, update_file_size
+from utils.decorators       import log_func, log_route
+from utils.handle_dir       import remove_file_dir, create_file, update_file_size
 from utils.excel_conversion import convert_to_excel
 from utils.pdf_conversion   import convert_to_pdf
 from utils.csv_conversion   import convert_to_csv
@@ -58,13 +58,13 @@ def save_file() -> FileStatus:
 @app.route('/api/removeFile', methods=['POST'])
 @log_route
 def remove_file() -> FileStatus:
-    file_id = request.form.get('id')
+    # file_id = request.form.get('id')
     file_name = request.form.get('file_name')
-    if not file_id or not file_name:
+    if not file_name:
         app.logger.error("remove_file_dir: file not found in request")
         return jsonify({'status': 'failure', 'error': 'No file arg in the request'}), 400
     
-    full_file_name = f"{file_name}_{file_id}"
+    full_file_name = f"{file_name}"
     remove_file_response = remove_file_dir(temp_dir, full_file_name)
     if remove_file_response['status'] == 'failure':
         app.logger.error("remove_file_dir: Failed to remove file: %s", remove_file_response['error'])
@@ -85,14 +85,14 @@ def convert_file() -> FileState | FileStatus:
     file_id = file_state_dict['metadata']['id']
     file_name = file_state_dict['metadata']['fileName']
     current_extension = file_state_dict['metadata']['fileExtension']
-    conversion = file_state_dict['fileConversions']['conversion'][1]
-    tmp_file_path = f"/tmp/{file_name}_{file_id}"
+    conversion = file_state_dict['fileConversions']['conversion']
 
-    if not os.path.exists(tmp_file_path):
+    file_path = f"{temp_dir}/{file_name}"
+    if not os.path.exists(file_path):
         app.logger.error("convert_file: Could not find file %s in /tmp", file_name)
-        file_state_dict['status'] = 'failure'
-        file_state_dict['error'] = 'Server error has occurred'
-        return jsonify(file_state_dict)
+        file_state_dict['fileStatus']['status'] = 'failure'
+        file_state_dict['fileStatus']['error'] = 'Server error has occurred'
+        return jsonify(file_state_dict), 404
     
     conversion_dict = {
         "pdf" :  convert_to_pdf,
@@ -108,9 +108,10 @@ def convert_file() -> FileState | FileStatus:
     }
     
     try:
-        with open(tmp_file_path, 'rb') as f:
+        with open(file_path, 'rb') as f:
             content = f.read()
-            func = conversion_dict.get(conversion.lower())
+            conversion_key = conversion.lstrip('.').lower()            
+            func = conversion_dict.get(conversion_key)
             if func:
                 app.logger.debug(f"Calling func {func.__name__}")
                 converted_file = func(content, current_extension)
@@ -121,48 +122,47 @@ def convert_file() -> FileState | FileStatus:
                 app.logger.debug(f"Conversion successful, content length: {len(converted_file)} bytes")
                 new_file_state = update_file_state(converted_file, file_state_dict)
             
-        if new_file_state['status']['status'] == 'failure':
-            raise Exception(f"Failed to convert {file_name}")
+                if new_file_state['status']['status'] == 'failure':
+                    raise Exception(f"Failed to convert {file_name}")
 
-        app.logger.info(f"convert_file: Successfully converted file {file_name} from {current_extension} to {conversion}")
-        return jsonify(new_file_state)
+                app.logger.info(f"convert_file: Successfully converted file {file_name} from {current_extension} to {conversion}")
+                return jsonify(new_file_state), 200
+            else:
+                raise Exception(f"Unsupported conversion type: {conversion}")
     
     except Exception as e:
-        app.logger.error(f"convert_file: Failed to convert file {file_name} from {current_extension} to {conversion}")
+        app.logger.error(f"convert_file: Failed to convert file {file_name} from {current_extension} to {conversion} error: {str(e)}")
         file_state_dict['status'] = {'status': 'failure', 'error': str(e)}
-        return jsonify(file_state_dict), 400
+        return jsonify(file_state_dict), 500
 
 
-
-def update_file_state(content: bytes, file_state: FileState) -> FileState:
-    file_id = file_state['metadata']['id']
-    old_file_name = file_state['metadata']['file_name']
-    old_file_path = f'/tmp/{file_id}_{old_file_name}'
-    new_ext = file_state['conversion']['conversion']
-    new_file_name = update_file_name(old_file_name, new_ext)
+@log_func
+def update_file_state(content: bytes, file_state_dict: FileState) -> FileState:
+    # Update the file_name
+    app.logger.debug(f"update_file_state: file_state_dict is {file_state_dict}")
+    old_file_name = file_state_dict['metadata']['fileName']
+    old_ext_index = old_file_name.find('.')
+    new_ext = file_state_dict['fileConversions']['conversion']
+    new_file_name = old_file_name[:old_ext_index] + f'.{new_ext}'
     
     # Remove old file from directory
-    remove_old_file = remove_file(temp_dir, old_file_path)
+    remove_old_file = remove_file_dir(temp_dir, old_file_name)
     if remove_old_file['status'] == 'failure':
-        app.logger.error(f"[update_file_state]: Failed to remove old file {old_file_name} from directory.")
-        file_state['status'] = remove_old_file
-        return file_state
+        file_state_dict['status'] = remove_old_file
+        return file_state_dict
     
     # Insert new file to directory
-    upload_converted_file = create_file(temp_dir ,new_file_name, content)
+    upload_converted_file = create_file(temp_dir, new_file_name, content)
     if upload_converted_file['status'] == 'failure':
-        app.logger.error(f"[update_file_state]: Failed to add new converted file {new_file_name} to directory")
-        file_state['status'] = upload_converted_file
-        return file_state
-    
-    app.logger.debug(f"[update_file_state]: Successfully added converted file {new_file_name} to directory.")
+        file_state_dict['status'] = upload_converted_file
+        return file_state_dict
     
     # update file size
-    new_file_path = f'/tmp/{new_file_name}'
+    new_file_path = f'{temp_dir}/{new_file_name}'
     new_file_size = update_file_size(temp_dir, new_file_path)
     
     # update file type
-    mime_type, _ = mimetypes.guess_type(new_file_path)
+    mime_type = mimetypes.guess_type(new_file_path)
     updated_file_type = mime_type if mime_type else "application/octet-stream"
     
     # Assemble new file state
@@ -172,12 +172,12 @@ def update_file_state(content: bytes, file_state: FileState) -> FileState:
             "fileName": new_file_name, 
             "fileSize": new_file_size,
             "fileType": updated_file_type,
-            "fileNameShortened": file_state['metadata']['fileNameShortened'],
+            "fileNameShortened": file_state_dict['metadata']['fileNameShortened'],
             "fileExtension": new_ext,
-            "id": file_state['metadata']['id'] 
+            "id": file_state_dict['metadata']['id'] 
         },
-        "status": file_state['status'],
-        "conversion": file_state['conversion']
+        "fileStatus": file_state_dict['fileStatus'],
+        "fileConversions": file_state_dict['fileConversions']
     }
     
     app.logger.debug(f"[update_file_state]: Successfully updated file state")
@@ -186,7 +186,7 @@ def update_file_state(content: bytes, file_state: FileState) -> FileState:
 if __name__ == "__main__":
     # To run in development mode change FLASK_ENV to development in server env file
     env = os.environ.get("FLASK_ENV", "development")
-    port = os.environ.get("PORT", 8081)
+    port = os.environ.get("PORT", 5000)
     
     debug_mode = env == "development"
         
