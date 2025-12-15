@@ -3,7 +3,7 @@
 import { IoIosImages } from "react-icons/io";
 import { Button } from "@/components/ui/button";
 import { Files, X, Plus } from "lucide-react";
-import {  useRef, ChangeEvent, useEffect, useState } from "react";
+import {  useRef, ChangeEvent, useEffect, useState, DragEvent } from "react";
 import { useAppDispatch, useAppSelector } from "../lib/hooks";
 import { uploadFile, removeFile, uploadFileToBackend, removeFileFromBackend, convertFile } from "../lib/reducers/processFiles";
 import { openDialog } from "../lib/reducers/appController";
@@ -17,6 +17,7 @@ import { v4 as uuidv4 } from 'uuid';
 export default function DropBox() {
   const [areSelectedFiles, setAreSelectedFiles] = useState<boolean>(false);
   const [allSuccessFiles, setAllSuccessFiles] = useState<boolean>(false);
+  const [isDragOver, setIsDragOver] = useState<boolean>(false);
   const [fileListID, setFileListID] = useState<{ fileID: FileMetadata['id'], fileObj: File } [] > ([])
 
   const dispatch = useAppDispatch();
@@ -24,12 +25,11 @@ export default function DropBox() {
 
   const files = useAppSelector(processFile).files;
 
-  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-    let fileList: FileList | null = e.target.files;
+  const handleFileUpload = async (fileList: FileList | null) => {
     if (!fileList) return;
     console.debug(`Inserting ${fileList?.length} files`)
 
-    if (fileList.length > 3 || files.length + fileList.length > 3) {
+    if (files.length > 3 || fileList.length + fileList.length > 3) {
       console.error(`File quantity exceeded 3.`);
       dispatch(openDialog(tooManyFilesDialog()))
       return
@@ -97,6 +97,30 @@ export default function DropBox() {
     }
   }
 
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }
+
+  const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  }
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    handleFileUpload(e.dataTransfer.files);
+  }
+
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    handleFileUpload(e.target.files);
+  };
 
   const handleRemoveFile = async (selectedFile: FileState, reason?: 'clearAll' | 'removeOne') => {
     let targetedFile: FileState | undefined = reason === 'removeOne'
@@ -200,7 +224,13 @@ const handleClearAll = () => {
   }, [files])
 
   return (
-    <div className={`flex flex-col items-center border-dashed border-4 border-black bg-accent ${areSelectedFiles ? "selected" : ""}`} id="dropBox">
+    <div
+      className={`flex flex-col items-center border-dashed border-4 border-black bg-accent ${areSelectedFiles ? "selected" : ""} ${isDragOver ? "drag-over" : ""}`}      id="dropBox"
+      onDragOver={handleDragOver}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
 
       <div className={`flex-row justify-evenly items-center ${areSelectedFiles ? "hidden" : "flex"}` } id="dropBox-header">
         <IoIosImages size={80} className="text-background" />
@@ -213,7 +243,7 @@ const handleClearAll = () => {
             type="file"
             ref={inputFile}
             multiple
-            onChange={handleFileUpload}
+            onChange={handleInputChange}
             id="dropFileInput"
             className="hidden"
           />

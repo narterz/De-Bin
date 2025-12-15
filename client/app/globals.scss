@@ -180,7 +180,7 @@
 
     #dropBox {
         @apply xl:justify-evenly xl:w-4/6 xl:h-5/6;
-
+        
         &.selected {
             @apply xl:justify-between;
         }
@@ -208,6 +208,10 @@
 
         .dropbox-icons {
             @apply text-accent cursor-pointer;
+        }
+
+        &.drag-over {
+            opacity: 0.5;
         }
     }
 
