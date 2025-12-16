@@ -1,22 +1,24 @@
 import pandas as pd
 import logging
+import img2pdf
 
 from io import BytesIO
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Table
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from models import FileStatus
 from utils.decorators import log_func
+from weasyprint import HTML
 
 log = logging.getLogger(__name__)
 
 @log_func
 def convert_to_pdf(file: bytes, ext: str) -> bytes | FileStatus:
     pdf_conversion_dict = {
-        ".jpg": convert_jpg_to_pdf,
-        ".png": convert_jpg_to_pdf,
+        ".jpg": convert_image_to_pdf,
+        ".png": convert_image_to_pdf,
         ".txt": convert_txt_to_pdf,
         ".xlsx": convert_excel_to_pdf,
         ".csv": convert_csv_to_pdf,
@@ -62,46 +64,56 @@ def convert_txt_to_pdf(file: bytes) -> bytes | FileStatus:
     except Exception as e:
         return {"status": 'failure', "error": str(e)}
     
-def convert_csv_to_pdf(file: bytes) -> bytes:    
-    buffer = BytesIO(file)
-    df = pd.read_csv(buffer)
-    
-    data = [df.columns.tolist()] + df.values.tolist()
-    
-    output_pdf_doc = BytesIO()
-    pdf_doc = SimpleDocTemplate(output_pdf_doc, pagesize=A4, leftMargin=18, rightMargin=18, topMargin=18, bottomMargin=18)
+def convert_csv_to_pdf(file: bytes) -> bytes:  
+    try:  
+        buffer = BytesIO(file)
+        df = pd.read_csv(buffer)
+        
+        data = [df.columns.tolist()] + df.values.tolist()
+        
+        output_pdf_doc = BytesIO()
+        pdf_doc = SimpleDocTemplate(output_pdf_doc, pagesize=A4, leftMargin=18, rightMargin=18, topMargin=18, bottomMargin=18)
 
+        # Create table and style it
+        table = Table(data, repeatRows=1, hAlign="LEFT")
+        table.setStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F2F2F2")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+            ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+            ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ])
+        
+        # Build PDF
+        pdf_doc.build([table])
+        pdf_bytes = output_pdf_doc.getvalue()
+        output_pdf_doc.close()
+        
+        return pdf_bytes
+    except Exception as e:
+        return { "status": "failure", "error": str(e) }
     
-    # Create table and style it
-    table = Table(data, repeatRows=1, hAlign="LEFT")
-    table.setStyle(Table([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F2F2F2")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
-        ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
-        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
-        ("FONTSIZE", (0, 0), (-1, -1), 8),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-        ("TOPPADDING", (0, 0), (-1, -1), 4),
-    ]))
-    
-    # Build PDF
-    pdf_doc.build([table])
-    pdf_bytes = output_pdf_doc.getvalue()
-    output_pdf_doc.close()
-    
-    return pdf_bytes
-    
-    
+def convert_image_to_pdf(file: bytes) -> bytes:
+    try:
+        pdf_bytes = img2pdf.convert(file)
+        return pdf_bytes
+    except Exception as e:
+        return { "status": "failure", "error": str(e) }
 
 def convert_excel_to_pdf(file: bytes) -> bytes:
-    # If the extension is xlsb convert to xlsx first
-    pass
-
-
-def convert_png_to_pdf(file: bytes) -> bytes:
-    pass
-
-def convert_jpg_to_pdf(file: bytes) -> bytes:
-    pass
+    try:
+        buffer = BytesIO(file)
+        sheets = pd.read_excel(buffer, sheet_name=None)
+        
+        html = ""
+        for name, df in sheets.items():
+            html += f"<h2>{name}</h2>"
+            html += df.to_html(index=False)
+        pdf = HTML(string=html).write_pdf()
+        return pdf
+    except Exception as e:
+        return { "status": "failure", "error": str(e) }

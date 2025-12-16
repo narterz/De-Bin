@@ -44,7 +44,7 @@ export default function DropBox() {
         const metadata = {
           id: uuidv4(),
           file: serializedFile,
-          fileName: file.name,
+          fileName: file.name.replaceAll(" ", "_"),
           fileSize: file.size,
           fileType: file.type,
           fileNameShortened: shortenFileName(file.name),
@@ -231,7 +231,6 @@ const handleClearAll = () => {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-
       <div className={`flex-row justify-evenly items-center ${areSelectedFiles ? "hidden" : "flex"}` } id="dropBox-header">
         <IoIosImages size={80} className="text-background" />
         <h2 className="text-black">Drag, drop, or select your files here</h2>

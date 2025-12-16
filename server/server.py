@@ -4,6 +4,7 @@ import mimetypes
 import os
 import json
 from tempfile import TemporaryDirectory
+import base64
 
 from models import FileMetadata, FileConversion, FileStatus, FileState
 
@@ -122,7 +123,7 @@ def convert_file() -> FileState | FileStatus:
                 app.logger.debug(f"Conversion successful, content length: {len(converted_file)} bytes")
                 new_file_state = update_file_state(converted_file, file_state_dict)
             
-                if new_file_state['status']['status'] == 'failure':
+                if new_file_state['fileStatus']['status'] == 'failure':
                     raise Exception(f"Failed to convert {file_name}")
 
                 app.logger.info(f"convert_file: Successfully converted file {file_name} from {current_extension} to {conversion}")
@@ -139,27 +140,36 @@ def convert_file() -> FileState | FileStatus:
 @log_func
 def update_file_state(content: bytes, file_state_dict: FileState) -> FileState:
     # Update the file_name
-    app.logger.debug(f"update_file_state: file_state_dict is {file_state_dict}")
     old_file_name = file_state_dict['metadata']['fileName']
     old_ext_index = old_file_name.find('.')
     new_ext = file_state_dict['fileConversions']['conversion']
-    new_file_name = old_file_name[:old_ext_index] + f'.{new_ext}'
+    new_file_name = old_file_name[:old_ext_index] + f'{new_ext}'
+    app.logger.debug(f"New file name {new_file_name}")
     
     # Remove old file from directory
     remove_old_file = remove_file_dir(temp_dir, old_file_name)
     if remove_old_file['status'] == 'failure':
+        app.logger.error(f"Error removing old file {old_file_name}, {remove_old_file['error']}")
         file_state_dict['status'] = remove_old_file
         return file_state_dict
+    app.logger.debug(f"Successfully removed old file {old_file_name}")
     
     # Insert new file to directory
     upload_converted_file = create_file(temp_dir, new_file_name, content)
     if upload_converted_file['status'] == 'failure':
+        app.logger.error(f"Failed to insert new file {new_file_name} into directory")
         file_state_dict['status'] = upload_converted_file
         return file_state_dict
+    app.logger.debug(f"Successfully inserted new file {new_file_name} to directory")
     
     # update file size
     new_file_path = f'{temp_dir}/{new_file_name}'
-    new_file_size = update_file_size(temp_dir, new_file_path)
+    new_file_size = update_file_size(new_file_path)
+    if not isinstance(new_file_size, int):
+        app.logger.error(f"Failed to get update size of new file {new_file_name}")
+        file_state_dict['status'] = new_file_size
+        return file_state_dict
+    app.logger.debug(f"Successfully updated file size of new file {new_file_name}")
     
     # update file type
     mime_type = mimetypes.guess_type(new_file_path)
@@ -168,7 +178,7 @@ def update_file_state(content: bytes, file_state_dict: FileState) -> FileState:
     # Assemble new file state
     new_file_state: FileState = {
         "metadata": {
-            "file": content,
+            "file": base64.b64encode(content).decode('utf-8'),
             "fileName": new_file_name, 
             "fileSize": new_file_size,
             "fileType": updated_file_type,

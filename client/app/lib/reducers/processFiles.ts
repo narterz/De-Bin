@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction, createAsyncThunk, } from '@reduxjs/toolkit';
 import { FileState, FilesState, FileMetadata, FileStatus } from '@/app/utils/types';
+import { getFileConversions } from '@/app/utils/fileValidation';
 import axios from 'axios';
 
 const initialState: FilesState = {
@@ -52,7 +53,7 @@ export const uploadFileToBackend = createAsyncThunk<
             return thunkAPI.rejectWithValue({status: "failure", error: response.data.error})
         }
 
-        return { fileID: fileState.metadata.id || '', fileStatus: response.data };
+        return { fileID: fileState.metadata.id || '', fileStatus: { status: "idle", error: '' } };
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       return thunkAPI.rejectWithValue({ status: 'failure', error: errorMsg });
@@ -100,7 +101,13 @@ const processFiles = createSlice({
         removeFile: (state, action: PayloadAction<FileState>) => {
             const fileIndex = state.files.findIndex(file => file.metadata.id === action.payload.metadata.id)
             state.files.splice(fileIndex, 1)
-        }
+        },
+        updateFileConversion: (state, action: PayloadAction<FileState>) => {
+            const fileIndex = state.files.findIndex(file => file.metadata.id === action.payload.metadata.id);
+            const fileName = state.files[fileIndex].metadata.fileName;
+            state.files[fileIndex] = action.payload;
+            console.debug(`Successfully updated ${fileName} conversion to ${action.payload.fileConversions?.conversion}`)
+        }  
     },
     extraReducers: (builder) => {
         // convertFile
@@ -117,12 +124,13 @@ const processFiles = createSlice({
             
         builder.addCase(convertFile.fulfilled, (state, action) => {
             // The backend has already set new state for the file
-            const newFileState: FileState = action.meta.arg;
-            const formerFileIndex = state.files.findIndex(file => file.metadata.id === action.meta.arg.metadata.id)
-            const formerFileName = state.files[formerFileIndex].metadata.fileName;
-            const formerFileExt = state.files[formerFileIndex].metadata.fileExtension
-            console.debug(`File ${formerFileName} successfully converted from ${formerFileExt} to ${newFileState.fileConversions?.conversion}`)
-            state.files[formerFileIndex] = newFileState
+            let newFileState: FileState = action.payload.fileState;
+            newFileState.fileConversions = getFileConversions(newFileState.fileConversions?.conversion);
+            const formerFileIndex = state.files.findIndex(file => file.metadata.id === newFileState.metadata.id);  // Use newFileState.id for safety
+            const formerFileName = state.files[formerFileIndex]?.metadata.fileName || 'Unknown';
+            const formerFileExt = state.files[formerFileIndex]?.metadata.fileExtension || 'Unknown';
+            console.debug(`File ${formerFileName} successfully converted from ${formerFileExt} to ${newFileState.fileConversions?.conversion}`);
+            state.files[formerFileIndex] = newFileState;
         }),
    
         builder.addCase(convertFile.rejected, (state, action) => {
@@ -183,5 +191,5 @@ const processFiles = createSlice({
     }
 })
 
-export const { uploadFile, removeFile } = processFiles.actions;
+export const { uploadFile, removeFile, updateFileConversion } = processFiles.actions;
 export default processFiles.reducer;

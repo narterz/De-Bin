@@ -9,7 +9,11 @@ log.info("Logging configured on handle_dir.py")
 def create_file(base_dir, file_name, uploaded_file):
     full_path = os.path.join(base_dir, file_name)
     try:
-        uploaded_file.save(full_path)
+        if isinstance(uploaded_file, bytes):
+            with open(full_path, 'wb') as f:
+                f.write(uploaded_file)
+        else:
+            uploaded_file.save(full_path)
         log.debug(f"create_file: Successfully uploaded file {file_name} to directory")
         return {'status': 'success', 'error': ''}
     except Exception as e:
@@ -28,14 +32,13 @@ def remove_file_dir(base_dir, file_name):
         return { 'status': 'failure', 'error': str(e) }
     
     
-def update_file_size(base_dir, file_path: str) -> int:
-    full_path = os.path.join(base_dir, file_path)
+def update_file_size(file_path: str) -> int:
     try:
-        if not os.path.isfile(full_path):
+        if not os.path.isfile(file_path):
             log.error(f"Could not find file in path {file_path}")
             return { 'status': 'failure', 'error': 'File not found' }
         
-        file_stat = os.stat(full_path)
+        file_stat = os.stat(file_path)
         return file_stat.st_size
     except Exception as e:
         log.error(f"Failed to updated file size ", str(e))

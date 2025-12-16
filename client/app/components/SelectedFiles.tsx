@@ -54,7 +54,7 @@ export default function SelectedFiles(
                         </>
 
                         : <>
-                            <TooltipTrigger className="bg-accent w-1/4 flex items-center justify-center h-1/2 rounded-lg">
+                            <TooltipTrigger className={`${file.fileStatus.status === "success" ? "bg-green-400" : "bg-accent"} w-1/4 flex items-center justify-center h-1/2 rounded-lg`}>
                                 <File className="selected-file-icons bg-success"/>
                             </TooltipTrigger>
                             <TooltipContent className="text-black">{file.metadata.fileName}</TooltipContent>
@@ -68,7 +68,7 @@ export default function SelectedFiles(
                 <p>{file.metadata.fileExtension}</p>
                 <MoveRight className="text-black" />
                 {file.fileConversions && (
-                    <FileTypeSelect fileConversion={file.fileConversions} />
+                    <FileTypeSelect file={file} />
                 )}
             </div>
 
