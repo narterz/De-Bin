@@ -33,7 +33,6 @@ export type AcceptedFilTypes =
     | ".csv"
     | ".png"
     | ".xlsx"
-    | ".xls"
     | ".xlsb"
     | ".jpg"
     | ".zip"

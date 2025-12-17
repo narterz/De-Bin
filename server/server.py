@@ -102,7 +102,6 @@ def convert_file() -> FileState | FileStatus:
         "jpg" :  convert_to_jpg,
         "jpeg":  convert_to_jpg,
         "png" :  convert_to_png,
-        "xls" :  convert_to_excel,
         "xlsx":  convert_to_excel,
         "xlsb":  convert_to_excel,
         "zip" :  convert_to_zip
