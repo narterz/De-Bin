@@ -6,7 +6,7 @@ import json
 from tempfile import TemporaryDirectory
 import base64
 
-from models import FileMetadata, FileConversion, FileStatus, FileState
+from models import FileStatus, FileState
 
 from utils.decorators       import log_func, log_route
 from utils.handle_dir       import remove_file_dir, create_file, update_file_size

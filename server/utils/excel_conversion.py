@@ -1,6 +1,6 @@
 import pandas as pd
-import subprocess, tempfile, os
 import logging
+import re
 
 from models import FileStatus
 from utils.decorators import log_func
@@ -30,11 +30,45 @@ def convert_to_excel(file: bytes, ext: str) -> bytes | FileStatus:
     else:
         log.debug(f"{func.__name__}: Successfully converted file to xlsx")
     return xlsx_conversion
-        
-def convert_xlsb_to_xlsx(file: bytes) -> bytes | FileStatus:
-    pass
-    
 
+@log_func     
+def convert_xlsb_to_xlsx(file: bytes) -> bytes | FileStatus:
+    try:        
+        df_dict = pd.read_excel(BytesIO(file), engine='pyxlsb', sheet_name=None)
+        output_buffer = BytesIO()
+        
+        sheet_name_set = set()
+        with pd.ExcelWriter(output_buffer, engine="openpyxl") as writer:
+            for sheet_name, df in df_dict.items():
+                # Sanitize sheet name
+                sanitized_name = re.sub(r'[\/\\?*\[\]:]', '_', sheet_name).strip()
+                if not sanitized_name:
+                    sanitized_name = "Sheet"
+                
+                original_sanitized_name = sanitized_name
+                counter = 1
+                
+                #Ensure unique names
+                while sanitized_name in sheet_name_set:
+                    sanitized_name = f"{original_sanitized_name}_{counter}"
+                    counter += 1
+                    
+                sheet_name_set.add(sanitized_name)
+                
+                if sanitized_name != sheet_name:
+                    log.warning(f"Sheet name {sheet_name} changed to {sanitized_name} due to sheet name value being invalid or missing")
+                    
+                df.to_excel(writer, sheet_name=sheet_name, index=False)
+                
+        output_buffer.seek(0)
+        xlsx_file = output_buffer.getvalue()
+        
+        return xlsx_file
+            
+    except Exception as e:
+        return { "status": "failure", "error": str(e) }
+    
+    
 def convert_csv_to_xlsx(file: bytes) -> bytes | FileStatus:
     pass
 

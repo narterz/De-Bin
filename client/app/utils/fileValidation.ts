@@ -51,8 +51,8 @@ export const conversionMap: Record<AcceptedFilTypes, AcceptedFilTypes[]> = {
     ".png": [".jpg", ".pdf", ".zip", ".txt"],
     ".xlsx": [".csv", ".txt", ".pdf"],
     ".xlsb": [".xlsx"],
-    ".txt": [".csv", ".pdf", ".zip", ".xlsx"],
-    ".zip": [".txt", ".pdf"],
+    ".txt": [".csv", ".pdf", ".png", ".zip", ".xlsx"],
+    ".zip": [".txt", ".pdf", ".csv"],
 };
 
 export const defaultConversion: Record<AcceptedFilTypes, AcceptedFilTypes> = {

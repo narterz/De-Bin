@@ -2,11 +2,10 @@ import logging
 import csv
 import tabula
 import pandas as pd
-import zipfile
 
-from utils.excel_conversion import convert_xlsx_to_xlsb
 from models import FileStatus
 from utils.decorators import log_func
+from utils.zip_conversion import unzip_file
 from io import BytesIO, StringIO
 
 log = logging.getLogger(__name__)
@@ -15,11 +14,8 @@ log = logging.getLogger(__name__)
 def convert_to_csv(file: bytes, ext: str) -> bytes | FileStatus:
     csv_conversion_dict = {
         ".xlsx": convert_excel_to_csv,
-        ".xls": convert_excel_to_csv,
-        ".xlsb": convert_excel_to_csv,
         ".pdf": convert_pdf_to_csv,
         ".txt": convert_txt_to_csv,
-        ".zip": convert_zip_to_csv,
     }
     
     func = csv_conversion_dict.get(ext)
@@ -29,6 +25,8 @@ def convert_to_csv(file: bytes, ext: str) -> bytes | FileStatus:
     log.debug(f"Calling function {func.__name__}")
     if ext in ["xls", "xlsx", "xlsb"]:
         csv_conversion = func(file, ext)
+    elif ext == '.zip':
+        csv_conversion = unzip_file(file, ext)
     else:
         csv_conversion = func(file)
         
@@ -83,23 +81,3 @@ def convert_pdf_to_csv(file: bytes) -> bytes | FileStatus:
     
     except Exception as e:
         return { 'status': 'failure', 'error': str(e) }
-
-@log_func
-def convert_zip_to_csv(file: bytes) -> bytes | FileStatus:
-    try:
-        with zipfile.ZipFile(BytesIO(file)) as z:
-            
-            csv_file = [i for i in z.namelist() if i.lower().endswith(".csv")]
-            
-            if not csv_file:
-                raise Exception("File is not a compressed csv")
-            
-            csv_name = csv_file[0]
-            
-        return z.read(csv_name)
-    
-    except Exception as e:
-        return { 'status': 'failure', "error": str(e) }
-
-
-

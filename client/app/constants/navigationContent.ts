@@ -41,12 +41,6 @@ export const sampleBtnContent: NavigationBtnContent[] = [
         file: "XLSX",
     },
     {
-        title: "Sample xls document",
-        description:
-            "Download sample xls file and drag it to drop box to test conversions",
-        file: "XLS",
-    },
-    {
         title: "Sample xlsb document",
         description:
             "Download sample xlsb file and drag it to drop box to test conversions",
@@ -70,4 +64,9 @@ export const sampleBtnContent: NavigationBtnContent[] = [
             "Download sample csv file and drag it to drop box to test conversions",
         file: "CSV",
     },
+    {
+        title: "Sample jpg document",
+        description: "Download sample jpg file and drag it to drop box to test conversions",
+        file: "JPG"
+    }
 ];
