@@ -1,3 +1,4 @@
+from operator import index
 import pandas as pd
 import logging
 import re
@@ -70,10 +71,28 @@ def convert_xlsb_to_xlsx(file: bytes) -> bytes | FileStatus:
     
     
 def convert_csv_to_xlsx(file: bytes) -> bytes | FileStatus:
-    pass
-
-def convert_txt_to_xlsx(file: bytes) -> bytes | FileStatus:
-    pass
+    try:
+        df = pd.read_csv(BytesIO(file))
+        output_buffer = BytesIO()
+        
+        with pd.ExcelWriter(output_buffer, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False)
+            
+        output_buffer.seek(0)
+        xlsx_file = output_buffer.getvalue()
+        
+        return xlsx_file
+        
+    except Exception as e:
+        return { "status": "failure", "error": str(e) }
 
 def convert_pdf_to_xlsx(file: bytes) -> bytes | FileStatus:
+    try:
+        pdf_stream = BytesIO(file)
+        
+        
+    except Exception as e:
+        raise e
+
+def convert_txt_to_xlsx(file: bytes) -> bytes | FileStatus:
     pass

@@ -5,7 +5,6 @@ import pandas as pd
 
 from models import FileStatus
 from utils.decorators import log_func
-from utils.zip_conversion import unzip_file
 from io import BytesIO, StringIO
 
 log = logging.getLogger(__name__)
@@ -23,12 +22,7 @@ def convert_to_csv(file: bytes, ext: str) -> bytes | FileStatus:
         return { 'status': 'failure', 'error': f"No conversion function for extension {ext}" }
     
     log.debug(f"Calling function {func.__name__}")
-    if ext in ["xls", "xlsx", "xlsb"]:
-        csv_conversion = func(file, ext)
-    elif ext == '.zip':
-        csv_conversion = unzip_file(file, ext)
-    else:
-        csv_conversion = func(file)
+    csv_conversion = func(file)
         
     if isinstance(csv_conversion, dict):
         log.error(f"{func.__name__}: Failed to convert file to csv. {csv_conversion.get('error', 'unknown error occurred')}")
@@ -37,8 +31,21 @@ def convert_to_csv(file: bytes, ext: str) -> bytes | FileStatus:
     return csv_conversion
         
 
-def convert_excel_to_csv(file: bytes, ext: str) -> bytes | FileStatus:
-    pass
+def convert_excel_to_csv(file: bytes) -> bytes | FileStatus:
+    try:
+        xlsx_file = pd.read_excel(BytesIO(file))
+        output_buffer = BytesIO()
+        
+        with pd.ExcelWriter(output_buffer, engine="openpyxl") as writer:
+            xlsx_file.to_csv(writer, index=None, header=True)
+            
+        output_buffer.seek(0)
+        csv_file = output_buffer.getvalue()
+        
+        return csv_file
+    
+    except Exception as e:
+        return { "status": "failure", "error": str(e) }
 
 @log_func
 def convert_txt_to_csv(file: bytes) -> bytes | FileStatus:
