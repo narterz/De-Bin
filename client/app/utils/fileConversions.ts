@@ -1,7 +1,6 @@
-import { FileConversion, FileMetadata, FileState, FileStatus } from "./types";
+import { FileMetadata, FileState } from "./types";
 import { jsPDF } from "jspdf";
 import * as XLSX from 'xlsx';
-import { getFileExtension } from "./fileValidation";
 
 export default async function handleFileConversion(file: FileState): Promise<FileState> {
     console.debug("handleFileConversion called. Routing user to conversion function")

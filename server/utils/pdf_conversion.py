@@ -5,12 +5,12 @@ import img2pdf
 from io import BytesIO
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Table
+from reportlab.platypus import SimpleDocTemplate, Table, Paragraph, Spacer
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
 from models import FileStatus
 from utils.decorators import log_func
-from weasyprint import HTML
 
 log = logging.getLogger(__name__)
 
@@ -109,11 +109,41 @@ def convert_excel_to_pdf(file: bytes) -> bytes:
         buffer = BytesIO(file)
         sheets = pd.read_excel(buffer, sheet_name=None)
         
-        html = ""
+        output_pdf_doc = BytesIO()
+        pdf_doc = SimpleDocTemplate(output_pdf_doc, pagesize=A4, leftMargin=18, rightMargin=18, topMargin=18, bottomMargin=18)
+        styles = getSampleStyleSheet()
+        elements = []
+        
         for name, df in sheets.items():
-            html += f"<h2>{name}</h2>"
-            html += df.to_html(index=False)
-        pdf = HTML(string=html).write_pdf()
-        return pdf
+            # Add sheet title
+            title = Paragraph(f"<b>{name}</b>", styles['Heading2'])
+            elements.append(title)
+            elements.append(Spacer(1, 12))
+            
+            # Prepare table data
+            data = [df.columns.tolist()] + df.values.tolist()
+            
+            # Create table
+            table = Table(data, repeatRows=1, hAlign="LEFT")
+            table.setStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F2F2F2")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+                ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+                ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ])
+            elements.append(table)
+            elements.append(Spacer(1, 24))  # Space between sheets
+        
+        # Build PDF
+        pdf_doc.build(elements)
+        pdf_bytes = output_pdf_doc.getvalue()
+        output_pdf_doc.close()
+        
+        return pdf_bytes
     except Exception as e:
         return { "status": "failure", "error": str(e) }

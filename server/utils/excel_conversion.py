@@ -68,12 +68,35 @@ def convert_xlsb_to_xlsx(file: bytes) -> bytes | FileStatus:
     except Exception as e:
         return { "status": "failure", "error": str(e) }
     
-    
+@log_func  
 def convert_csv_to_xlsx(file: bytes) -> bytes | FileStatus:
-    pass
+    try:
+        df = pd.read_csv(BytesIO(file))
+        output_buffer = BytesIO()
 
+        with pd.ExcelWriter(output_buffer, engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name="Sheet1", index=False)
+
+        output_buffer.seek(0)
+        xlsx_file = output_buffer.getvalue()
+
+        return xlsx_file
+    except Exception as e:
+        return { "status": "failure", "error": str(e) }
+
+@log_func
 def convert_txt_to_xlsx(file: bytes) -> bytes | FileStatus:
-    pass
+    try:
+        pass
+        df = pd.read_csv(BytesIO(file), delim_whitespace=True)
+        output_buffer = BytesIO()
+        
+        with pd.ExcelFile(output_buffer, engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name='Sheet1', index=False)
+            
+        output_buffer.seek(0)
+        xlsx_file = output_buffer.getvalue()
 
-def convert_pdf_to_xlsx(file: bytes) -> bytes | FileStatus:
-    pass
+        return xlsx_file
+    except Exception as e:
+        return { "status": "failure", "error": str(e) }
