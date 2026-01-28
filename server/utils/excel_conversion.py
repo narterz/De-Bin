@@ -1,3 +1,4 @@
+from operator import index
 import pandas as pd
 import logging
 import re
