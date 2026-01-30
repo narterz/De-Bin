@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
+from dotenv import load_dotenv
 import mimetypes
 import os
 import json
@@ -19,10 +20,12 @@ from utils.txt_conversion   import convert_to_txt
 from utils.zip_conversion   import convert_to_zip
 
 app = Flask(__name__)
-CORS(app)
-
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 UPLOAD_FOLDER = "/tmp/"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+load_dotenv()
+print(f"PORT from env: {os.environ.get('PORT')}")
+
 
 tempdir_obj = TemporaryDirectory(prefix="d-bin_")
 temp_dir = tempdir_obj.name
@@ -82,8 +85,10 @@ def convert_file() -> FileState | FileStatus:
         app.logger.error("convert_file: Request missing arg FileState")
         return jsonify({'status': 'failure', 'error': 'FileState arg not present in request'})
     
+    # FileState is returned upon success FileStatus upon failure
     file_state_dict = json.loads(file_state_json)
-    file_id = file_state_dict['metadata']['id']
+    file_status_response = file_state_dict['fileStatus']
+    
     file_name = file_state_dict['metadata']['fileName']
     current_extension = file_state_dict['metadata']['fileExtension']
     conversion = file_state_dict['fileConversions']['conversion']
@@ -91,9 +96,9 @@ def convert_file() -> FileState | FileStatus:
     file_path = f"{temp_dir}/{file_name}"
     if not os.path.exists(file_path):
         app.logger.error("convert_file: Could not find file %s in /tmp", file_name)
-        file_state_dict['fileStatus']['status'] = 'failure'
-        file_state_dict['fileStatus']['error'] = 'Server error has occurred'
-        return jsonify(file_state_dict), 404
+        file_status_response['status'] = 'failure'
+        file_status_response['error'] = 'Server could not find file'
+        return jsonify(file_status_response), 404
     
     conversion_dict = {
         "pdf" :  convert_to_pdf,
@@ -116,24 +121,31 @@ def convert_file() -> FileState | FileStatus:
                 app.logger.debug(f"Calling func {func.__name__}")
                 converted_file = func(content, current_extension)
                 
+                # Error handling of file conversion from conversion modules
                 if isinstance(converted_file, dict) and converted_file.get('status') == 'failure':
-                    raise Exception(converted_file['error'])
+                    file_status_response = conversion_dict
+                    return jsonify(file_status_response), 400
+                    
                 
                 app.logger.debug(f"Conversion successful, content length: {len(converted_file)} bytes")
                 new_file_state = update_file_state(converted_file, file_state_dict)
             
+                # Error handling of failed fileState updating
                 if new_file_state['fileStatus']['status'] == 'failure':
-                    raise Exception(f"Failed to convert {file_name}")
+                    file_status_response = new_file_state['fileStatus']
+                    return jsonify(file_status_response), 400
 
                 app.logger.info(f"convert_file: Successfully converted file {file_name} from {current_extension} to {conversion}")
                 return jsonify(new_file_state), 200
             else:
+                app.logger.error(f"Conversion function {func} does not exist")
                 raise Exception(f"Unsupported conversion type: {conversion}")
     
     except Exception as e:
         app.logger.error(f"convert_file: Failed to convert file {file_name} from {current_extension} to {conversion} error: {str(e)}")
-        file_state_dict['status'] = {'status': 'failure', 'error': str(e)}
-        return jsonify(file_state_dict), 500
+        file_status_response['status'] = 'failure'
+        file_status_response['error'] = f'Server error has occurred: {str(e)}'
+        return jsonify(file_status_response), 500
 
 
 @log_func
@@ -195,7 +207,8 @@ def update_file_state(content: bytes, file_state_dict: FileState) -> FileState:
 if __name__ == "__main__":
     # To run in development mode change FLASK_ENV to development in server env file
     env = os.environ.get("FLASK_ENV", "development")
-    port = os.environ.get("PORT", 5000)
+    port = os.environ.get("PORT", 8001)
+    print(f"Using port: {port}")
     
     debug_mode = env == "development"
         

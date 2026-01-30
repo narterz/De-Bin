@@ -2,6 +2,7 @@ from operator import index
 import pandas as pd
 import logging
 import re
+import csv
 
 from models import FileStatus
 from utils.decorators import log_func
@@ -17,7 +18,6 @@ def convert_to_excel(file: bytes, ext: str) -> bytes | FileStatus:
         ".xlsb": convert_xlsb_to_xlsx,
         ".csv": convert_csv_to_xlsx,
         ".txt": convert_txt_to_xlsx,
-        ".pdf": convert_pdf_to_xlsx
     }
     func = excel_conversion_dict.get(ext)
     if not func:
@@ -88,7 +88,14 @@ def convert_csv_to_xlsx(file: bytes) -> bytes | FileStatus:
 @log_func
 def convert_txt_to_xlsx(file: bytes) -> bytes | FileStatus:
     try:
-        pass
+        sniffer = csv.Sniffer()
+        buffer = BytesIO(file)
+        buffer_sample = buffer.read(1024).decode('utf-8', errors='ignore')
+        delimiter = sniffer.sniff(buffer_sample).delimiter
+        
+        if delimiter not in [',', ' ']:
+            raise Exception("Txt file contains unsupported delimiter")
+        
         df = pd.read_csv(BytesIO(file), delim_whitespace=True)
         output_buffer = BytesIO()
         
