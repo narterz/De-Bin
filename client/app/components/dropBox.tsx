@@ -137,7 +137,7 @@ export default function DropBox() {
         }
 
         const backendResponse:any = await dispatch(removeFileFromBackend(targetedFile));
-        const { status, error } = backendResponse.payload.status;
+        const { status, error } = backendResponse.payload.fileStatus;
 
         if (status === 'failure') {
           throw new Error(error)
