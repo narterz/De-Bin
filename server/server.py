@@ -123,7 +123,7 @@ def convert_file() -> FileState | FileStatus:
                 
                 # Error handling of file conversion from conversion modules
                 if isinstance(converted_file, dict) and converted_file.get('status') == 'failure':
-                    file_status_response = conversion_dict
+                    file_status_response = converted_file
                     return jsonify(file_status_response), 400
                     
                 
