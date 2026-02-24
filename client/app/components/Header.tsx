@@ -1,6 +1,6 @@
 "use client";
 
-import { GoFileBinary } from "react-icons/go";
+import { BsFillFileEarmarkBinaryFill } from "react-icons/bs";
 import { saveAs } from 'file-saver';
 import {
   NavigationMenu,
@@ -35,23 +35,23 @@ export default function Header() {
 
   return (
     <div className="w-full h-full flex flex-row items-center justify-around">
-      <div className="flex flex-col h-full w-1/4 justify-center items-center p-4">
-        <GoFileBinary className="text-6xl" />
-        <h1 className="text-xl font-semibold">De-Bin</h1>
+      <div className="header-section" id="header-left">
+        <BsFillFileEarmarkBinaryFill className="header-logo"/>
+        <h1 className="nav-logo-text text-xl font-semibold">De-Bin</h1>
       </div>
 
-      <div className="flex flex-col h-full relative w-1/3 justify-center items-center p-4">
+      <div className="header-section relative" id="header-right">
         <NavigationMenu className="w-full">
           <NavigationMenuList className="flex gap-4">
             {menuContent.map(btn => (
-              <NavigationMenuItem key={btn.name}>
+              <NavigationMenuItem key={btn.name} className="nav-btns">
                 <NavigationMenuTrigger className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition">
                   {btn.name}
                 </NavigationMenuTrigger>
                 <NavigationMenuContent className="min-w-[24rem] p-4 bg-white shadow-lg rounded-md border border-gray-200">
                   <ul className="grid gap-4">
                     {btn.content.map(row => (
-                      <NavigationMenuList className="p-3 flex flex-col items-center space-evenly" key={row.title}>
+                      <NavigationMenuList className="nav-btns p-3 flex flex-col items-center space-evenly" key={row.title}>
                         <div className="flex flex-col justify-around h-1/3 w-full transition-opacity hover:opacity-50 cursor-pointer" onClick={() => row.file && handleDownload(row.file)}>
                           <h3 className="font-bold text-accent">{row.title}</h3>
                           <p className="font-light">{row.description}</p>

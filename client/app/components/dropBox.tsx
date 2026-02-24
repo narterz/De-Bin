@@ -233,7 +233,7 @@ const handleClearAll = () => {
     >
       <div className={`flex-row justify-evenly items-center ${areSelectedFiles ? "hidden" : "flex"}` } id="dropBox-header">
         <IoIosImages size={80} className="text-background" />
-        <h2 className="text-black">Drag, drop, or select your files here</h2>
+        <h2 className="dropBox-header-title text-black">Drag, drop, or select your files here</h2>
       </div>
 
       <div className={`display-none-transition text-center flex-center-evenly  ${areSelectedFiles ? "selected" : ""}`} id="dropBox-body">
@@ -251,22 +251,22 @@ const handleClearAll = () => {
           ? files.map((file) => (
             <SelectedFiles file={file} onRemoveFile={() => handleRemoveFile(file, 'removeOne')} key={`selected-file-${file.metadata.fileName}`}/>
           ))
-          : <div className="h-full w-full flex flex-col items-center justify-around m-5">
+          : <div className="dropBox-text h-full flex flex-col items-center justify-around m-5">
                 <p>Drag and drop your files here or press the button below to select files</p>
                 <small>See help to view all acceptable files.</small>
             </div>
         }
       </div>
 
-      <div className="display-none-transition w-1/2 h-1/5 flex flex-row justify-evenly items-center mb-5" id="dropBox-footer">
-        <Button disabled={files.length === 3}  className="dropbox-btns" onClick={() => inputFile.current?.click()} >
+      <div className="display-none-transition flex flex-row justify-evenly items-center mb-5" id="dropBox-footer">
+        <Button disabled={files.length === 3}  className="dropBox-btns" onClick={() => inputFile.current?.click()} >
           <Plus className="dropbox-icons" /> Choose Files
         </Button>
         <Button disabled={!allSuccessFiles} className={`dropBox-btns ${areSelectedFiles ? "flex" : "hidden"}`}  onClick={() => handleConvertFiles()} >
           <Files className="dropbox-icons" /> Convert Files
         </Button>
         <Button className={`dropBox-btns ${areSelectedFiles ? "flex" : "hidden"}`} onClick={() => handleClearAll()}>
-          <X className="dropbox-icons"/> Clear all
+          <X className="dropbox-icons"/> Clear all Files
         </Button>
       </div>
 

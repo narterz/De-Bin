@@ -41,20 +41,20 @@ export default function SelectedFiles(
     },[file])
 
     return (
-        <div className="selected-files w-full h-1/4 flex flex-row border rounded shadow-lg bg-foreground text-black border border-black">
+        <div className="selected-files h-1/4 flex flex-row border rounded shadow-lg bg-foreground text-black border-black">
 
-            <div className="selected-file-section w-1/3">
+            <div className="selected-file-section w-1/3" id="title">
                 <Tooltip onOpenChange={handleTooltipHover}>
                     { file.fileStatus.error 
                         ? <>
-                            <TooltipTrigger className="bg-accent">
+                            <TooltipTrigger className="selected-file-tooltip bg-accent flex-center">
                                 <X className="selected-file-icons bg-error"/>
                             </TooltipTrigger>
                             <TooltipContent className="text-black">{`${file.fileStatus.status}: ${file.fileStatus.error}`}</TooltipContent>
                         </>
 
                         : <>
-                            <TooltipTrigger className={`${file.fileStatus.status === "success" ? "bg-green-400" : "bg-accent"} w-1/4 flex items-center justify-center h-1/2 rounded-lg`}>
+                            <TooltipTrigger className={`${file.fileStatus.status === "success" ? "bg-green-400" : "bg-accent"} selected-file-tooltip flex-center`}>
                                 <File className="selected-file-icons bg-success"/>
                             </TooltipTrigger>
                             <TooltipContent className="text-black">{file.metadata.fileName}</TooltipContent>
@@ -77,13 +77,13 @@ export default function SelectedFiles(
                 <Button 
                     className="icon-btn selected-files-btn bg-accent" 
                     onClick={() => onRemoveFile(file)}>
-                    <Trash className="selected-file-icons cursor-pointer"/>
+                    <Trash className="selected-file-icons"/>
                 </Button>
                 <Button
                     className={`${isDownloadable} ? icon-btn selected-files-btn bg-accent : hidden`}
                     onClick={() => handleDownloadFile()}
                 >
-                    <Download className="selected-file-icons cursor-pointer"/>
+                    <Download className="selected-file-icons"/>
                 </Button>
             </div>
         </div>

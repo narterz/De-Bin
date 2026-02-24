@@ -1,0 +1,20 @@
+@layer utilities {
+    .hover-text {
+        @apply cursor-pointer transition-opacity duration-200 delay-100 ease-in-out hover:opacity-50;
+    }
+
+    .hover-icon {
+    }
+
+    .display-none-transition {
+        @apply transition-all ease-in-out delay-150 duration-300 overflow-hidden;
+    }
+
+    .flex-center-between {
+        @apply flex flex-row justify-between items-center;
+    }
+
+    .flex-center-evenly {
+        @apply flex flex-col items-center justify-evenly;
+    }
+}

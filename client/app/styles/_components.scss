@@ -1,0 +1,70 @@
+@layer components {
+    header {
+        .nav-list {
+            @apply w-full border border-green-500;
+        }
+    }
+
+    .header-item {
+        @apply flex flex-row items-center justify-around;
+    }
+
+    .header-item h3 {
+        @apply font-medium;
+    }
+
+    #dropBox {
+        @apply xl:justify-evenly xl:w-4/6 xl:h-5/6;
+        
+        &.selected {
+            @apply xl:justify-between;
+        }
+
+        #dropBox-header {
+            @apply xl:h-1/4 xl:w-1/2;
+        }
+
+        #dropBox-body {
+            @apply xl:h-1/4 xl:w-1/2;
+
+            &.selected {
+                @apply xl:h-3/4 xl:mt-5;
+            }
+        }
+
+        #dropBox-footer {
+            @apply xl:h-1/5 xl:w-1/2;
+
+            .dropBox-btns {
+                @apply xl:w-1/5;
+                @apply flex flex-row items-center justify-evenly;
+            }
+        }
+
+        .dropbox-icons {
+            @apply text-accent cursor-pointer;
+        }
+
+        &.drag-over {
+            opacity: 0.5;
+        }
+    }
+
+    .selected-files {
+        .selected-file-section {
+            @apply h-full flex flex-row items-center justify-around;
+
+            .selected-file-icons {
+                @apply text-white cursor-pointer;
+            }
+
+            p {
+                @apply text-black;
+            }
+
+            .selected-files-btn {
+                @apply bg-accent;
+            }
+        }
+    }
+}

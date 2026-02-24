@@ -12,12 +12,14 @@ from pdf2image import convert_from_bytes
 
 log = logging.getLogger(__name__)
 
+# Conversions to txt and pdf will come in another update
+
 @log_func
 def convert_to_jpg(file: bytes, ext: str) -> bytes | FileStatus:
     jpg_conversion_dict = {
         ".png": convert_png_to_jpg,
-        ".txt": convert_txt_to_jpg,
         ".pdf": convert_pdf_to_jpg,
+        ".txt": convert_txt_to_jpg,
         ".xlsx": convert_xlsx_to_jpg
     }
     

@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 def convert_to_txt(file: bytes, ext: str) -> bytes | FileStatus:
     txt_conversion_dict = {
         ".csv": convert_csv_to_txt,
-        ".xlsx": convert_xlsx_to_txt
+        ".xlsx": convert_xlsx_to_txt,
     }
     func = txt_conversion_dict.get(ext)
     if not func:

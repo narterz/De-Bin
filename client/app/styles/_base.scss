@@ -1,0 +1,40 @@
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+    body {
+        @apply bg-background text-black h-screen w-screen;
+    }
+
+    h1 {
+        @apply text-3xl font-bold text-accent;
+    }
+
+    h2 {
+        @apply text-2xl font-bold text-accent;
+    }
+
+    h3 {
+        @apply text-xl font-bold;
+    }
+
+    p {
+        @apply text-base;
+    }
+
+    small {
+        @apply text-sm font-light;
+    }
+
+    .icon {
+        @apply cursor-pointer;
+    }
+
+    .icon-btn {
+        @apply cursor-pointer;
+    }
+
+    Button {
+        @apply cursor-pointer;
+    }
+}

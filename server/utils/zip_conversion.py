@@ -7,8 +7,19 @@ from io import BytesIO
 
 log = logging.getLogger(__name__)
 
+# Unzip file will be avaliable in the next update
+
 @log_func
 def convert_to_zip(file: bytes, ext: str) -> bytes | FileStatus:
+    zip_conversion_dict = {
+        ".csv": zip_file,
+        ".txt": zip_file
+    }
+    func = zip_conversion_dict.get(ext)
+    if not func:
+        return { 'status': 'failure', 'error': f"No conversion function for extension {ext}" }
+
+    log.debug(f"Calling function {func.__name__}")
     zip_conversion = zip_file(file)
     
     if isinstance(zip_conversion, dict):

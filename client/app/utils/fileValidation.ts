@@ -43,16 +43,17 @@ export const convertFileSize = (fileSize: FileMetadata["fileSize"]) => {
     return finalConversion;
 };
 
+//TODO: Case for when a format yeilds an empty conversionList
 export const conversionMap: Record<AcceptedFilTypes, AcceptedFilTypes[]> = {
     ".pdf":  [".jpg", ".png", ".txt", ".xlsx", ".csv"],
-    ".csv":  [".xlsx", ".txt", ".pdf", ".zip"],
+    ".csv":  [".xlsx", ".txt", ".pdf"],
     ".jpg":  [".png", ".pdf"],
     ".jpeg": [".png", ".pdf"],
     ".png":  [".jpg", ".pdf"],
-    ".xlsx": [".csv", ".txt", ".pdf", ".jpg"],
-    ".xlsb": [".xlsx"],
-    ".txt":  [".csv", ".pdf", ".png", ".jpg", ".xlsx"],
-    ".zip":  [".csv"],
+    ".xlsx": [".csv", ".txt", ".xlsb"],
+    ".xlsb": [],
+    ".txt":  [".csv", ".xlsx", ".txt"],
+    ".zip":  [".csv", ".txt"],
 };
 
 export const defaultConversion: Record<AcceptedFilTypes, AcceptedFilTypes> = {

@@ -63,7 +63,8 @@ def convert_txt_to_pdf(file: bytes) -> bytes | FileStatus:
         return buffer.read()
     except Exception as e:
         return {"status": 'failure', "error": str(e)}
-    
+
+@log_func
 def convert_csv_to_pdf(file: bytes) -> bytes:  
     try:  
         buffer = BytesIO(file)
@@ -96,7 +97,8 @@ def convert_csv_to_pdf(file: bytes) -> bytes:
         return pdf_bytes
     except Exception as e:
         return { "status": "failure", "error": str(e) }
-    
+
+@log_func  
 def convert_image_to_pdf(file: bytes) -> bytes:
     try:
         pdf_bytes = img2pdf.convert(file)
@@ -104,6 +106,7 @@ def convert_image_to_pdf(file: bytes) -> bytes:
     except Exception as e:
         return { "status": "failure", "error": str(e) }
 
+@log_func
 def convert_excel_to_pdf(file: bytes) -> bytes:
     try:
         buffer = BytesIO(file)
