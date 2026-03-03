@@ -236,20 +236,31 @@
         #dropBox-header {
             @apply xsm:w-full;
             @apply md:w-3/4;
+            @apply 2xl:h-1/4 2xl:w-1/2;
             @apply xl:h-1/4;
 
             .dropBox-header-title {
                 @apply xsm:text-xl;
                 @apply sm:text-2xl;
+                @apply xl:text-3xl;
             }
         }
 
         #dropBox-body {
-            @apply xl:h-1/4;
+            @apply xl:h-1/5;
             @apply xsm:w-full xsm:h-2/3;
-
+            
             .dropBox-text {
                 @apply xsm:w-4/5;
+                @apply xl:h-1/4;
+                
+                p {
+                    @apply xl:text-lg
+                }
+
+                small {
+                    @apply xl:text-base;
+                }
             }
 
             &.selected {
@@ -259,6 +270,7 @@
             .selected-files {
                 @apply xsm:w-[95%];
                 @apply md:w-4/5;
+                @apply 2xl:w-3/5;
 
                 .selected-file-section {
                     @apply h-full flex flex-row items-center justify-around;

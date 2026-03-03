@@ -32,15 +32,12 @@ export const getFileExtension = (
     return mime.extension(fileType);
 };
 
-export const convertFileSize = (fileSize: FileMetadata["fileSize"]) => {
+export const getFileSizeValue = (fileSize: FileMetadata["fileSize"]) => {
     const intFileSize = fileSize as number;
-    const conversionKb = intFileSize / 1024;
-    const conversionMb = intFileSize / (1024 * 1024);
-    const finalConversion =
-        conversionKb >= 1000
-            ? `${conversionMb.toFixed(2)}.mb`
-            : `${conversionKb.toFixed(2)}.kb`;
-    return finalConversion;
+    const fileSizeKb = intFileSize / 1024;
+    const fileSizeMb = intFileSize / (1024 * 1024);
+    const newFileSize = fileSizeKb > 1000 ? `${fileSizeMb.toFixed(0)}MB` : `${fileSizeKb.toFixed(2)}KB`;
+    return newFileSize
 };
 
 //TODO: Case for when a format yeilds an empty conversionList

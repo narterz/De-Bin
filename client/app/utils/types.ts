@@ -46,6 +46,7 @@ type DialogNames =
     | "majorFailureDialog"
     | "alreadyAddedDialog"
     | "failedToUploadFile"
+    | "failedToDownloadFile"
     | "none"
         
 

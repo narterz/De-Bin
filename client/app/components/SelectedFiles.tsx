@@ -4,9 +4,11 @@ import FileTypeSelect from "./FileTypeSelect";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toggleTooltip } from "../lib/reducers/appController";
+import { downloadFile } from "../lib/reducers/processFiles";
 import { useAppDispatch, useAppSelector } from "../lib/hooks";
 import { appController } from "../lib/selectors";
 import { useEffect, useState } from "react";
+import { getFileSizeValue } from "../utils/fileValidation";
 
 export default function SelectedFiles(
     { file, onRemoveFile }: 
@@ -23,8 +25,9 @@ export default function SelectedFiles(
         }
     }
 
-    const handleDownloadFile = () => {
-
+    const handleDownloadFile = async () => {
+        console.debug(`[handleDownloadFile] initiating download via downloadFile()`);
+        await dispatch(downloadFile(file))
     }
 
 
@@ -34,8 +37,7 @@ export default function SelectedFiles(
     
     // If a files extension has changed, then it was converted and can now be downloaded
     useEffect(() => {
-        console.debug(`Status of ${file.metadata.fileName} changed to ${file.fileStatus.status}`)
-        if (file.metadata.fileExtension !== originalFormat) {
+        if(file.fileStatus.status === 'success') {
             setIsDownloadable(true)
         }
     },[file])
@@ -47,7 +49,7 @@ export default function SelectedFiles(
                 <Tooltip onOpenChange={handleTooltipHover}>
                     { file.fileStatus.error 
                         ? <>
-                            <TooltipTrigger className="selected-file-tooltip bg-accent flex-center">
+                            <TooltipTrigger className="selected-file-tooltip bg-error flex-center">
                                 <X className="selected-file-icons bg-error"/>
                             </TooltipTrigger>
                             <TooltipContent className="text-black">{`${file.fileStatus.status}: ${file.fileStatus.error}`}</TooltipContent>
@@ -73,14 +75,14 @@ export default function SelectedFiles(
             </div>
 
             <div className="selected-file-section w-1/3">
-                <p>{file.metadata.fileSize}</p>
+                <p>{getFileSizeValue(file.metadata.fileSize)}</p>
                 <Button 
                     className="icon-btn selected-files-btn bg-accent" 
                     onClick={() => onRemoveFile(file)}>
                     <Trash className="selected-file-icons"/>
                 </Button>
                 <Button
-                    className={`${isDownloadable} ? icon-btn selected-files-btn bg-accent : hidden`}
+                    className={isDownloadable ? "icon-btn selected-files-btn bg-accent" : "hidden"}
                     onClick={() => handleDownloadFile()}
                 >
                     <Download className="selected-file-icons"/>

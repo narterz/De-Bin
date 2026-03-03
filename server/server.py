@@ -187,6 +187,7 @@ def update_file_state(content: bytes, file_state_dict: FileState) -> FileState:
     updated_file_type = mime_type if mime_type else "application/octet-stream"
     
     # Assemble new file state
+    file_state_dict['fileStatus']['status'] = 'success'
     new_file_state: FileState = {
         "metadata": {
             "file": base64.b64encode(content).decode('utf-8'),

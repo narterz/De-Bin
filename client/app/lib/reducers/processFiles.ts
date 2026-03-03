@@ -2,6 +2,7 @@ import { createSlice, PayloadAction, createAsyncThunk, } from '@reduxjs/toolkit'
 import { FileState, FilesState, FileMetadata, FileStatus } from '@/app/utils/types';
 import { getFileConversions } from '@/app/utils/fileValidation';
 import axios, { AxiosError } from 'axios';
+import { CircuitBoard } from 'lucide-react';
 
 const initialState: FilesState = {
     files: [],
@@ -91,6 +92,43 @@ export const removeFileFromBackend = createAsyncThunk<
     }
 )
 
+export const downloadFile = createAsyncThunk<
+    void,                                          // fulfilled return type
+    FileState,                                     // thunk argument type (pass FileState directly)
+    { rejectValue: FileStatus }                    // rejectWithValue type
+>(
+    'processFiles/downloadFile',
+    async (file, thunkAPI) => {
+        const base64Data = file.metadata.file;
+        const mimeType = file.metadata.fileType;
+        const fileName = file.metadata.fileName;
+        console.debug(`[downloadFile] Processing download of file ${fileName}`)
+        try {
+            const binaryFile = atob(base64Data);
+            const bytes = new Uint8Array(binaryFile.length);
+            for (let i = 0; i < binaryFile.length; i++) {
+                bytes[i] = binaryFile.charCodeAt(i)
+            }
+
+            const blob = new Blob([bytes], { type: mimeType});
+            const blobUrl = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a)
+            URL.revokeObjectURL(blobUrl);
+
+            console.debug(`[downloadFile] Successfully downloaded file: ${fileName}`);            
+        } catch (error) {
+            console.error(`[downloadFile] Failed to download file ${fileName}. Error: ${error}`);
+            return thunkAPI.rejectWithValue({'status': 'failure', 'error': `Failed to download file ${fileName}`})
+        }
+    }
+)
+
 
 
 
@@ -119,7 +157,7 @@ const processFiles = createSlice({
             const fileName = state.files[fileIndex].metadata.fileName;
             state.files[fileIndex] = action.payload;
             console.debug(`Successfully updated ${fileName} conversion to ${action.payload.fileConversions?.conversion}`)
-        }
+        },
     },
     extraReducers: (builder) => {
         // convertFile
@@ -134,27 +172,27 @@ const processFiles = createSlice({
             }
         }),
 
-            builder.addCase(convertFile.fulfilled, (state, action) => {
-                // The backend has already set new state for the file
-                let newFileState: FileState = action.payload.fileState;
-                newFileState.fileConversions = getFileConversions(newFileState.fileConversions?.conversion);
-                const formerFileIndex = state.files.findIndex(file => file.metadata.id === newFileState.metadata.id);  // Use newFileState.id for safety
-                const formerFileName = state.files[formerFileIndex]?.metadata.fileName || 'Unknown';
-                const formerFileExt = state.files[formerFileIndex]?.metadata.fileExtension || 'Unknown';
-                console.debug(`File ${formerFileName} successfully converted from ${formerFileExt} to ${newFileState.fileConversions?.conversion}`);
-                state.files[formerFileIndex] = newFileState;
-            }),
+        builder.addCase(convertFile.fulfilled, (state, action) => {
+            // The backend has already set new state for the file
+            let newFileState: FileState = action.payload.fileState;
+            newFileState.fileConversions = getFileConversions(newFileState.fileConversions?.conversion);
+            const formerFileIndex = state.files.findIndex(file => file.metadata.id === newFileState.metadata.id);  // Use newFileState.id for safety
+            const formerFileName = state.files[formerFileIndex]?.metadata.fileName || 'Unknown';
+            const formerFileExt = state.files[formerFileIndex]?.metadata.fileExtension || 'Unknown';
+            console.debug(`File ${formerFileName} successfully converted from ${formerFileExt} to ${newFileState.fileConversions?.conversion}`);
+            state.files[formerFileIndex] = newFileState;
+        }),
 
-            builder.addCase(convertFile.rejected, (state, action) => {
-                const fileID = action.meta.arg.metadata.id;
-                const existingFileIndex = state.files.findIndex(file => file.metadata.id === fileID);
-                if (existingFileIndex !== -1) {
-                    state.files[existingFileIndex].fileStatus = {
-                        status: 'failure',
-                        error: action.payload?.error || 'Conversion failed'
-                    };
-                }
-            })
+        builder.addCase(convertFile.rejected, (state, action) => {
+            const fileID = action.meta.arg.metadata.id;
+            const existingFileIndex = state.files.findIndex(file => file.metadata.id === fileID);
+            if (existingFileIndex !== -1) {
+                state.files[existingFileIndex].fileStatus = {
+                    status: 'failure',
+                    error: action.payload?.error || 'Conversion failed'
+                };
+            }
+        })
 
         // uploadFileToBackend
         builder.addCase(uploadFileToBackend.pending, (state, action) => {
@@ -167,22 +205,22 @@ const processFiles = createSlice({
             })
         }),
 
-            builder.addCase(uploadFileToBackend.fulfilled, (state, action) => {
-                const fileName = action.meta.arg.fileState.metadata.fileName
-                const newStatus = action.payload.fileStatus
-                console.debug(`File ${fileName} has successfully been uploaded to backend.`)
-                const existingFileIndex = state.files.findIndex(file => file.metadata.id === action.meta.arg.fileState.metadata.id)
-                state.files[existingFileIndex].fileStatus = newStatus
-            }),
+        builder.addCase(uploadFileToBackend.fulfilled, (state, action) => {
+            const fileName = action.meta.arg.fileState.metadata.fileName
+            const newStatus = action.payload.fileStatus
+            console.debug(`File ${fileName} has successfully been uploaded to backend.`)
+            const existingFileIndex = state.files.findIndex(file => file.metadata.id === action.meta.arg.fileState.metadata.id)
+            state.files[existingFileIndex].fileStatus = newStatus
+        }),
 
-            builder.addCase(uploadFileToBackend.rejected, (state, action) => {
-                const fileName = action.meta.arg.fileState.metadata.fileName
-                console.error(`Failed to upload file ${fileName} to backend. Changing status to failure`)
-                const existingFileIndex = state.files.findIndex(file => file.metadata.id === action.meta.arg.fileState.metadata.id)
-                if (state.files[existingFileIndex]) {
-                    removeFileById(state.files, state.files[existingFileIndex].metadata.id)
-                }
-            })
+        builder.addCase(uploadFileToBackend.rejected, (state, action) => {
+            const fileName = action.meta.arg.fileState.metadata.fileName
+            console.error(`Failed to upload file ${fileName} to backend. Changing status to failure`)
+            const existingFileIndex = state.files.findIndex(file => file.metadata.id === action.meta.arg.fileState.metadata.id)
+            if (state.files[existingFileIndex]) {
+                removeFileById(state.files, state.files[existingFileIndex].metadata.id)
+            }
+        })
 
         //removeFileFromBackend
         builder.addCase(removeFileFromBackend.fulfilled, (state, action) => {
@@ -196,6 +234,35 @@ const processFiles = createSlice({
             const fileID = action.meta.arg.metadata.id;
             const fileToRemove = state.files.find(file => action.meta.arg.metadata.id === file.metadata.id)
             removeFileById(state.files, fileID)
+        })
+
+        // downloadFile
+        builder.addCase(downloadFile.fulfilled, (state, action) => {
+            const existingFileIndex = state.files.findIndex(file => file.metadata.id === action.meta.arg.metadata.id)
+            state.files[existingFileIndex].fileStatus = {
+                status: 'success',
+                error: ''
+            }
+        })
+
+        builder.addCase(downloadFile.pending, (state, action) => {
+            const existingFileIndex = state.files.findIndex(file => file.metadata.id === action.meta.arg.metadata.id)
+            state.files[existingFileIndex].fileStatus = {
+                status: 'loading',
+                error: ''
+            }
+        })
+        builder.addCase(downloadFile.rejected, (state, action) => {
+            const existingFileIndex = state.files.findIndex(file => file.metadata.id === action.meta.arg.metadata.id);
+            const newFailureStatus = action.payload;
+            if (newFailureStatus) {
+                state.files[existingFileIndex].fileStatus = newFailureStatus
+            } else {
+                state.files[existingFileIndex].fileStatus = {
+                    status: 'failure',
+                    error: 'Failed to download file please try again'
+                }
+            }
         })
     }
 })
