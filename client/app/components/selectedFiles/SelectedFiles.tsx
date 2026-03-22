@@ -1,14 +1,17 @@
-import { Trash, File, MoveRight, X, Download } from "lucide-react";
-import { FileMetadata, FileState } from "../utils/types";
-import FileTypeSelect from "./FileTypeSelect";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { toggleTooltip } from "../lib/reducers/appController";
-import { downloadFile } from "../lib/reducers/processFiles";
-import { useAppDispatch, useAppSelector } from "../lib/hooks";
-import { appController } from "../lib/selectors";
+import { useAppDispatch, useAppSelector } from "../../lib/hooks";
+import { appController } from "../../lib/selectors";
 import { useEffect, useState } from "react";
-import { getFileSizeValue } from "../utils/fileValidation";
+
+import { Trash, File, MoveRight, X, Download } from "lucide-react";
+
+import { FileMetadata, FileState } from "../../utils/types";
+import { getFileSizeValue } from "../../utils/fileValidation";
+
+import { Button } from "@/components/ui/button";
+import { toggleTooltip } from "../../lib/reducers/appController";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { downloadFile } from "../../lib/reducers/processFiles";
+import FileTypeSelect from "../fileTypeSelect/FileTypeSelect";
 
 export default function SelectedFiles(
     { file, onRemoveFile }: 

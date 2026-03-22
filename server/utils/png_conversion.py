@@ -1,6 +1,6 @@
 import logging
 
-from pdf2image import convert_from_bytes
+from fitz import open as fitz_open 
 from models import FileStatus
 from utils.decorators import log_func
 from utils.zip_conversion import unzip_file
@@ -64,11 +64,11 @@ def convert_txt_to_png(file: bytes) -> bytes | FileStatus:
 @log_func
 def convert_pdf_to_png(file: bytes) -> bytes | FileStatus:
     try:
-        pages = convert_from_bytes(file)
-        if not pages:
-            raise Exception("No pages found in PDF")
-        output_buffer = BytesIO()
-        pages[0].save(output_buffer, format='PNG')
-        return output_buffer.getvalue()
+        pdf_doc = fitz_open(stream=file, filetype='pdf')
+        page = pdf_doc.load_page(0)
+        pixels = page.get_pixmap()
+        img_bytes = pixels.tobytes("png")
+        pdf_doc.close()
+        return img_bytes
     except Exception as e:
         return { 'status': 'failure', 'error': str(e) }

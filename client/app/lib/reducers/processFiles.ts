@@ -1,8 +1,7 @@
 import { createSlice, PayloadAction, createAsyncThunk, } from '@reduxjs/toolkit';
 import { FileState, FilesState, FileMetadata, FileStatus } from '@/app/utils/types';
 import { getFileConversions } from '@/app/utils/fileValidation';
-import axios, { AxiosError } from 'axios';
-import { CircuitBoard } from 'lucide-react';
+import axios from 'axios';
 
 const initialState: FilesState = {
     files: [],

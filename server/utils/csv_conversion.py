@@ -36,8 +36,7 @@ def convert_excel_to_csv(file: bytes) -> bytes | FileStatus:
         xlsx_file = pd.read_excel(BytesIO(file))
         output_buffer = BytesIO()
         
-        with pd.ExcelWriter(output_buffer, engine="openpyxl") as writer:
-            xlsx_file.to_csv(writer, index=None, header=True)
+        xlsx_file.to_csv(output_buffer, index=False, header=True)
             
         output_buffer.seek(0)
         csv_file = output_buffer.getvalue()

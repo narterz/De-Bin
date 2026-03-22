@@ -4,14 +4,14 @@ import { IoIosImages } from "react-icons/io";
 import { Button } from "@/components/ui/button";
 import { Files, X, Plus } from "lucide-react";
 import {  useRef, ChangeEvent, useEffect, useState, DragEvent } from "react";
-import { useAppDispatch, useAppSelector } from "../lib/hooks";
-import { uploadFile, removeFile, uploadFileToBackend, removeFileFromBackend, convertFile } from "../lib/reducers/processFiles";
-import { openDialog } from "../lib/reducers/appController";
-import { serializeFile, shortenFileName, getFileExtension, validateMetadata, validateDuplicateFile, getFileConversions } from "../utils/fileValidation";
-import { processFile } from "../lib/selectors";
-import SelectedFiles from "./SelectedFiles";
-import { FileMetadata, FileState, FileStatus, FileConversion, AcceptedFilTypes } from "../utils/types";
-import { tooManyFilesDialog, majorFailureDialog, failureDialog, failedToUploadFile } from "../utils/dialogContent";
+import { useAppDispatch, useAppSelector } from "../../lib/hooks";
+import { uploadFile, removeFile, uploadFileToBackend, removeFileFromBackend, convertFile } from "../../lib/reducers/processFiles";
+import { openDialog } from "../../lib/reducers/appController";
+import { serializeFile, shortenFileName, getFileExtension, validateMetadata, validateDuplicateFile, getFileConversions } from "../../utils/fileValidation";
+import { processFile } from "../../lib/selectors";
+import SelectedFiles from "../selectedFiles/SelectedFiles";
+import { FileMetadata, FileState, FileStatus, FileConversion, AcceptedFilTypes } from "../../utils/types";
+import { tooManyFilesDialog, majorFailureDialog, failureDialog, failedToUploadFile } from "../../utils/dialogContent";
 import { v4 as uuidv4 } from 'uuid';
 
 export default function DropBox() {
@@ -29,7 +29,7 @@ export default function DropBox() {
     if (!fileList) return;
     console.debug(`Inserting ${fileList?.length} files`)
 
-    if (files.length > 3 || fileList.length + fileList.length > 3) {
+    if (files.length + fileList.length > 3) {
       console.error(`File quantity exceeded 3.`);
       dispatch(openDialog(tooManyFilesDialog()))
       return
@@ -57,14 +57,21 @@ export default function DropBox() {
         const validateMetadataRes: FileStatus = validateMetadata(metadata);
         const validateDuplicateRes: FileStatus = validateDuplicateFile(metadata, files);
         
-        // If validations fail, don't bother the backend just update state
-        if (validateMetadataRes.status === 'failure' || validateDuplicateRes.status === 'failure') {
-          fileStatus = validateDuplicateRes.status === 'failure'
-            ? validateDuplicateRes
-            : validateMetadataRes
-          dispatch(uploadFile({ metadata, fileConversions, fileStatus }))
+        // If validations fail, don't bother the backend just open failureDialog
+        if(validateMetadataRes.status === 'failure'){
+          const failureMessage = validateMetadataRes.error
+          console.debug(`Unsupported ${metadata.fileExtension} file format detected`)
+          dispatch(openDialog(failedToUploadFile(failureMessage)))
           return
         }
+        
+        if(validateDuplicateRes.status === 'failure'){
+          const failureMessage = validateDuplicateRes.error
+          console.debug(`Duplicated file ${metadata.fileName} detected`)
+          dispatch(openDialog(failedToUploadFile(failureMessage)))
+          return
+        }
+
         console.debug(metadata.fileName, " has passed all validations")
 
         // Create FileConversions
@@ -86,7 +93,7 @@ export default function DropBox() {
 
         if (backendResponse.fileStatus.status === 'failure') {
           console.error(backendResponse.fileStatus.error)
-          dispatch(openDialog(failedToUploadFile(fileState.metadata.fileNameShortened)))
+          dispatch(openDialog(failedToUploadFile(backendResponse.fileStatus.error)))
           return
         }
 

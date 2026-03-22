@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 from models import FileStatus
 from utils.decorators import log_func
-from pdf2image import convert_from_bytes
+from fitz import open as fitz_open  # PyMuPDF
 
 log = logging.getLogger(__name__)
 
@@ -65,15 +65,12 @@ def convert_png_to_jpg(file: bytes) -> bytes | FileStatus:
 @log_func
 def convert_pdf_to_jpg(file: bytes) -> bytes | FileStatus:
     try:
-        image = convert_from_bytes(file, fmt="JPEG")
-        captured_image = image[0]
-        output_buffer = BytesIO()
-        
-        captured_image.save(output_buffer, format="JPEG")
-        output_buffer.seek(0)
-        jpeg_file = output_buffer.getvalue()
-        
-        return jpeg_file
+        pdf_doc = fitz_open(stream=file, filetype='pdf')
+        page = pdf_doc.load_page(0)
+        pixels = page.get_pixmap()
+        img_bytes = pixels.tobytes("jpeg")
+        pdf_doc.close()
+        return img_bytes
     
     except Exception as e:
         return { 'status': 'failure', 'error': str(e) }

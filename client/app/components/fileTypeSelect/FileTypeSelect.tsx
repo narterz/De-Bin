@@ -1,10 +1,10 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup } from "@/components/ui/select";
 
-import { useAppDispatch, useAppSelector } from "../lib/hooks";
-import { appController } from "../lib/selectors";
-import { toggleSelect } from "../lib/reducers/appController";
-import { updateFileConversion } from "../lib/reducers/processFiles";
-import { AcceptedFilTypes, FileState } from "../utils/types";
+import { useAppDispatch, useAppSelector } from "../../lib/hooks";
+import { appController } from "../../lib/selectors";
+import { toggleSelect } from "../../lib/reducers/appController";
+import { updateFileConversion } from "../../lib/reducers/processFiles";
+import { AcceptedFilTypes, FileState } from "../../utils/types";
 import { v4 as uuidv4 } from 'uuid';
 
 //TODO: Change color of placeholder text and icon carrot

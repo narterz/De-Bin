@@ -20,13 +20,13 @@ export const loadingFilesDialog = (): DialogState => {
     }
 }
 
-export const failedToUploadFile = (fileName: string | undefined): DialogState => {
+export const failedToUploadFile = (errorMessage: string): DialogState => {
     console.debug("Opening failedToUploadFile")
     return {
         dialogName: "failedToUploadFile",
         dialogIsOpen: true,
         dialogHeader: "Failed to upload file",
-        dialogBody: `Failed to upload file ${fileName}`
+        dialogBody: errorMessage
     }
 }
 

@@ -2,11 +2,11 @@
 
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogOverlay } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useAppDispatch, useAppSelector } from "../lib/hooks";
-import { closeDialog, openDialog } from "../lib/reducers/appController";
-import { appController, processFile } from "../lib/selectors";
+import { useAppDispatch, useAppSelector } from "../../lib/hooks";
+import { closeDialog, openDialog } from "../../lib/reducers/appController";
+import { appController, processFile } from "../../lib/selectors";
 import { useEffect } from "react";
-import { loadingFilesDialog, failureDialog, majorFailureDialog } from "../utils/dialogContent";
+import { loadingFilesDialog, failureDialog, majorFailureDialog } from "../../utils/dialogContent";
 
 export default function Modal() {
     const dispatch = useAppDispatch();
@@ -40,7 +40,7 @@ export default function Modal() {
 
     //
     useEffect(() => {
-        if (dialogController.dialogIsOpen) {
+        if (dialogController.dialogIsOpen && dialogController.dialogName !== 'failedToUploadFile') {  // Add condition to exclude error dialogs
             setTimeout(() => {
                 console.debug(`Closing ${dialogController.dialogName}`)
                 dispatch(closeDialog());
@@ -66,10 +66,10 @@ export default function Modal() {
                 </DialogHeader>
 
                 <DialogDescription>
-                    <span>{dialogState.dialogBody}</span>
-                    <span className="w-full h-2/3 flex flex-col items-center justify-evenly">
+                    <span className="text-black">{dialogState.dialogBody}</span>
+                    <span className="w-full h-2/3 flex flex-col items-center justify-evenly text-black">
                         {dialogController.errorList?.map((message, i) => (
-                            <span key={`message-${i}`}>{message}</span>
+                            <span className="text-black" key={`message-${i}`}>{message}</span>
                         ))}
                     </span>
                 </DialogDescription>

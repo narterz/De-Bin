@@ -42,14 +42,14 @@ export const getFileSizeValue = (fileSize: FileMetadata["fileSize"]) => {
 
 //TODO: Case for when a format yeilds an empty conversionList
 export const conversionMap: Record<AcceptedFilTypes, AcceptedFilTypes[]> = {
-    ".pdf":  [".jpg", ".png", ".txt", ".xlsx", ".csv"],
+    ".pdf":  [".jpg", ".png"],
     ".csv":  [".xlsx", ".txt", ".pdf"],
     ".jpg":  [".png", ".pdf"],
     ".jpeg": [".png", ".pdf"],
     ".png":  [".jpg", ".pdf"],
-    ".xlsx": [".csv", ".txt", ".xlsb"],
-    ".xlsb": [],
-    ".txt":  [".csv", ".xlsx", ".txt"],
+    ".xlsx": [".csv", ".txt"],
+    ".xlsb": [".xlsx"],
+    ".txt":  [".csv", ".xlsx", ".pdf"],
     ".zip":  [".csv", ".txt"],
 };
 
@@ -59,7 +59,7 @@ export const defaultConversion: Record<AcceptedFilTypes, AcceptedFilTypes> = {
     ".jpg":  ".png",
     ".jpeg": ".png",
     ".png":  ".jpg",
-    ".xlsx": ".xlsb",
+    ".xlsx": ".csv",
     ".xlsb": ".xlsx",
     ".txt":  ".pdf",
     ".zip":  ".txt"
@@ -114,10 +114,10 @@ export function validateMetadata(file: FileMetadata): FileStatus {
     // validate file extension
     if (file.fileExtension) {
         if (!Object.keys(conversionMap).includes(file.fileExtension)) {
-            console.debug(file.fileExtension);
+            console.error(`fileType ${file.fileExtension} is unsupported`);
             return {
                 status: "failure",
-                error: `File has unsupported format ${file.fileExtension}`,
+                error: `File ${file.fileName} has unsupported format ${file.fileExtension}`,
             };
         }
     }
