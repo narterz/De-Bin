@@ -3,22 +3,22 @@
 import { IoIosImages } from "react-icons/io";
 import { Button } from "@/components/ui/button";
 import { Files, X, Plus } from "lucide-react";
-import {  useRef, ChangeEvent, useEffect, useState, DragEvent } from "react";
-import { useAppDispatch, useAppSelector } from "../../lib/hooks";
-import { uploadFile, removeFile, uploadFileToBackend, removeFileFromBackend, convertFile } from "../../lib/reducers/processFiles";
-import { openDialog } from "../../lib/reducers/appController";
-import { serializeFile, shortenFileName, getFileExtension, validateMetadata, validateDuplicateFile, getFileConversions } from "../../utils/fileValidation";
-import { processFile } from "../../lib/selectors";
-import SelectedFiles from "../selectedFiles/SelectedFiles";
-import { FileMetadata, FileState, FileStatus, FileConversion, AcceptedFilTypes } from "../../utils/types";
-import { tooManyFilesDialog, majorFailureDialog, failureDialog, failedToUploadFile } from "../../utils/dialogContent";
+import { useRef, ChangeEvent, useEffect, useState, DragEvent } from "react";
+import { useAppDispatch, useAppSelector } from "../lib/hooks";
+import { removeFile, uploadFileToBackend, removeFileFromBackend, convertFile } from "../lib/reducers/processFiles";
+import { openDialog } from "../lib/reducers/appController";
+import { serializeFile, shortenFileName, getFileExtension, validateMetadata, validateDuplicateFile, getFileConversions } from "../utils/fileValidation";
+import { processFile } from "../lib/selectors";
+import SelectedFiles from "./SelectedFiles";
+import { FileMetadata, FileState, FileStatus, FileConversion, AcceptedFilTypes } from "../utils/types";
+import { tooManyFilesDialog, majorFailureDialog, failureDialog, failedToUploadFile } from "../utils/dialogContent";
 import { v4 as uuidv4 } from 'uuid';
 
 export default function DropBox() {
   const [areSelectedFiles, setAreSelectedFiles] = useState<boolean>(false);
   const [allSuccessFiles, setAllSuccessFiles] = useState<boolean>(false);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
-  const [fileListID, setFileListID] = useState<{ fileID: FileMetadata['id'], fileObj: File } [] > ([])
+  const [fileListID, setFileListID] = useState<{ fileID: FileMetadata['id'], fileObj: File }[]>([])
 
   const dispatch = useAppDispatch();
   const inputFile = useRef<HTMLInputElement>(null);
@@ -53,19 +53,19 @@ export default function DropBox() {
 
         // Create our FileStatus via validation
         let fileConversions: FileConversion = { conversion: '.zip', conversionList: [] };
-        let fileStatus: FileStatus = { status: "idle", error: '' }
+        const fileStatus: FileStatus = { status: "idle", error: '' }
         const validateMetadataRes: FileStatus = validateMetadata(metadata);
         const validateDuplicateRes: FileStatus = validateDuplicateFile(metadata, files);
-        
+
         // If validations fail, don't bother the backend just open failureDialog
-        if(validateMetadataRes.status === 'failure'){
+        if (validateMetadataRes.status === 'failure') {
           const failureMessage = validateMetadataRes.error
           console.debug(`Unsupported ${metadata.fileExtension} file format detected`)
           dispatch(openDialog(failedToUploadFile(failureMessage)))
           return
         }
-        
-        if(validateDuplicateRes.status === 'failure'){
+
+        if (validateDuplicateRes.status === 'failure') {
           const failureMessage = validateDuplicateRes.error
           console.debug(`Duplicated file ${metadata.fileName} detected`)
           dispatch(openDialog(failedToUploadFile(failureMessage)))
@@ -130,45 +130,51 @@ export default function DropBox() {
   };
 
   const handleRemoveFile = async (selectedFile: FileState, reason?: 'clearAll' | 'removeOne') => {
-    let targetedFile: FileState | undefined = reason === 'removeOne'
+    const targetedFile: FileState | undefined = reason === 'removeOne'
       ? files.find(f => f.metadata.id === selectedFile.metadata.id)
       : selectedFile;
-    
+
     try {
       if (targetedFile) {
-        
         // If the targeted file already has a status of failure, it failed validations so remove it.
         if (targetedFile.fileStatus.status === 'failure') {
-          dispatch(removeFile(targetedFile))
-          return
+          dispatch(removeFile(targetedFile));
+          return;
         }
 
-        const backendResponse:any = await dispatch(removeFileFromBackend(targetedFile));
-        const { status, error } = backendResponse.payload.fileStatus;
+        const backendResponse = await dispatch(removeFileFromBackend(targetedFile));
 
-        if (status === 'failure') {
-          throw new Error(error)
+        if (backendResponse.meta.requestStatus === 'fulfilled') {
+          const { fileStatus } = backendResponse.payload as { fileStatus: FileStatus };
+          const { status, error } = fileStatus;
+
+          if (status === 'failure') {
+            throw new Error(error);
+          }
+        } else {
+          // Handle rejection (e.g., network error)
+          const error = (backendResponse.payload as any)?.message || 'Failed to remove file';
+          throw new Error(error);
         }
-        
+
         if (inputFile.current) {
           inputFile.current.value = "";
         }
       }
-
-      } catch (err) {
-      dispatch(openDialog(majorFailureDialog()))
-        console.error("handleRemoveFile: Server error occurred while removing file: " + err)
-        throw new Error(String(err))
-      }
-  }
-
-const handleClearAll = () => {
-  (async () => {
-    for (const file of [...files]) {
-      await handleRemoveFile(file, 'clearAll');
+    } catch (err) {
+      dispatch(openDialog(majorFailureDialog()));
+      console.error("handleRemoveFile: Server error occurred while removing file: " + err);
+      throw new Error(String(err));
     }
-  })();
-}
+  };
+
+  const handleClearAll = () => {
+    (async () => {
+      for (const file of [...files]) {
+        await handleRemoveFile(file, 'clearAll');
+      }
+    })();
+  }
 
   const handleConvertFiles = async () => {
     if (!allSuccessFiles) {
@@ -180,7 +186,7 @@ const handleClearAll = () => {
       for (const file of files) {
         const response = await dispatch(convertFile(file)).unwrap();
         const { fileName, fileExtension } = file.metadata;
-        const conversion  = file.fileConversions?.conversion
+        const conversion = file.fileConversions?.conversion
         const { status, error } = response.fileState.fileStatus;
 
         if (status === 'failure') {
@@ -198,47 +204,55 @@ const handleClearAll = () => {
 
   // Toggle areSelected whenever fileState changes
   useEffect(() => {
-    if(files.length > 0) {
+    if (files.length > 0) {
       setAreSelectedFiles(true)
     } else setAreSelectedFiles(false)
-  },[files]);
+  }, [files]);
 
   // Toggle allSuccessFiles whenever fileState changes
   useEffect(() => {
     const allFilesSuccessful = files.every((file) => !file.fileStatus.error);
     setAllSuccessFiles(allFilesSuccessful)
   }, [files])
-    
-  useEffect( () => {
+
+  useEffect(() => {
     const idleFiles = files.filter(file => file.fileStatus.status === 'idle');
     if (idleFiles.length > 0) {
-        fileListID.map(async statePayload => {
-          try {
-            const fileByID = files.find(file => file.metadata.id === statePayload.fileID)
-            if (fileByID) {
-              const backendResponse:any = await dispatch(uploadFileToBackend({ fileState: fileByID, fileObj: statePayload.fileObj }))
-              const { status, error } = backendResponse.payload;
+      fileListID.map(async statePayload => {
+        try {
+          const fileByID = files.find(file => file.metadata.id === statePayload.fileID)
+          if (fileByID) {
+            const backendResponse = await dispatch(uploadFileToBackend({ fileState: fileByID, fileObj: statePayload.fileObj }))
+
+            if (backendResponse.meta.requestStatus === 'fulfilled') {
+              const { fileStatus } = backendResponse.payload as { fileID: string; fileStatus: FileStatus };
+              const { status, error } = fileStatus;
+
               if (status === 'failure') {
-                throw new Error(error)
+                throw new Error(error);
               }
+            } else {
+              const error = (backendResponse.payload as any)?.message || 'Failed to upload file';
+              throw new Error(error);
             }
-          } catch (err) {
-            throw new Error(String(err))
           }
-        })
+        } catch (err) {
+          throw new Error(String(err))
+        }
+      })
     }
-    if(allSuccessFiles) setFileListID([])
-  }, [files])
+    if (allSuccessFiles) setFileListID([])
+  }, [files, dispatch])
 
   return (
     <div
-      className={`flex flex-col items-center border-dashed border-4 border-black bg-accent ${areSelectedFiles ? "selected" : ""} ${isDragOver ? "drag-over" : ""}`}      id="dropBox"
+      className={`flex flex-col items-center border-dashed border-4 border-black bg-accent ${areSelectedFiles ? "selected" : ""} ${isDragOver ? "drag-over" : ""}`} id="dropBox"
       onDragOver={handleDragOver}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className={`flex-row justify-evenly items-center ${areSelectedFiles ? "hidden" : "flex"}` } id="dropBox-header">
+      <div className={`flex-row justify-evenly items-center ${areSelectedFiles ? "hidden" : "flex"}`} id="dropBox-header">
         <IoIosImages size={80} className="text-background" />
         <h2 className="dropBox-header-title text-black">Drag, drop, or select your files here</h2>
       </div>
@@ -254,26 +268,26 @@ const handleClearAll = () => {
             className="hidden"
           />
         </form>
-        { files.length > 0 
+        {files.length > 0
           ? files.map((file) => (
-            <SelectedFiles file={file} onRemoveFile={() => handleRemoveFile(file, 'removeOne')} key={`selected-file-${file.metadata.fileName}`}/>
+            <SelectedFiles file={file} onRemoveFile={() => handleRemoveFile(file, 'removeOne')} key={`selected-file-${file.metadata.fileName}`} />
           ))
           : <div className="dropBox-text h-full flex flex-col items-center justify-around m-5">
-                <p>Drag and drop your files here or press the button below to select files</p>
-                <small>See help to view all acceptable files.</small>
-            </div>
+            <p>Drag and drop your files here or press the button below to select files</p>
+            <small>See help to view all acceptable files.</small>
+          </div>
         }
       </div>
 
       <div className="display-none-transition flex flex-row justify-evenly items-center mb-5" id="dropBox-footer">
-        <Button disabled={files.length === 3}  className="dropBox-btns" onClick={() => inputFile.current?.click()} >
+        <Button disabled={files.length === 3} className="dropBox-btns" onClick={() => inputFile.current?.click()} >
           <Plus className="dropbox-icons" /> Choose Files
         </Button>
-        <Button disabled={!allSuccessFiles} className={`dropBox-btns ${areSelectedFiles ? "flex" : "hidden"}`}  onClick={() => handleConvertFiles()} >
+        <Button disabled={!allSuccessFiles} className={`dropBox-btns ${areSelectedFiles ? "flex" : "hidden"}`} onClick={() => handleConvertFiles()} >
           <Files className="dropbox-icons" /> Convert Files
         </Button>
         <Button className={`dropBox-btns ${areSelectedFiles ? "flex" : "hidden"}`} onClick={() => handleClearAll()}>
-          <X className="dropbox-icons"/> Clear all Files
+          <X className="dropbox-icons" /> Clear all Files
         </Button>
       </div>
 

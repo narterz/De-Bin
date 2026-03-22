@@ -1,27 +1,26 @@
-import { useAppDispatch, useAppSelector } from "../../lib/hooks";
-import { appController } from "../../lib/selectors";
+import { useAppDispatch, useAppSelector } from "../lib/hooks";
+import { appController } from "../lib/selectors";
 import { useEffect, useState } from "react";
 
 import { Trash, File, MoveRight, X, Download } from "lucide-react";
 
-import { FileMetadata, FileState } from "../../utils/types";
-import { getFileSizeValue } from "../../utils/fileValidation";
+import { FileMetadata, FileState } from "../utils/types";
+import { getFileSizeValue } from "../utils/fileValidation";
 
 import { Button } from "@/components/ui/button";
-import { toggleTooltip } from "../../lib/reducers/appController";
+import { toggleTooltip } from "../lib/reducers/appController";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { downloadFile } from "../../lib/reducers/processFiles";
-import FileTypeSelect from "../fileTypeSelect/FileTypeSelect";
+import { downloadFile } from "../lib/reducers/processFiles";
+import FileTypeSelect from "./FileTypeSelect";
 
 export default function SelectedFiles(
     { file, onRemoveFile }: 
         { file: FileState, onRemoveFile: (file: FileState) => void }) {
     const dispatch = useAppDispatch();
     const tooltipState = useAppSelector(appController).tooltipState;
-    const [originalFormat, setOriginalFormat] = useState<FileMetadata['fileExtension']>('');
     const [isDownloadable, setIsDownloadable] = useState<boolean>(false)
 
-    const handleTooltipHover = (open: any) => {
+    const handleTooltipHover = (open: boolean) => {
         if(!open) {
             console.debug(`SelectedFiles tooltip is ${tooltipState.tooltipIsOpen ? "opened" : "closed"}`)
             dispatch(toggleTooltip());
@@ -33,10 +32,6 @@ export default function SelectedFiles(
         await dispatch(downloadFile(file))
     }
 
-
-    useEffect(() => {
-        setOriginalFormat(file.metadata.fileExtension)
-    }, [])
     
     // If a files extension has changed, then it was converted and can now be downloaded
     useEffect(() => {

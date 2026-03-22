@@ -15,7 +15,7 @@ export default function Modal() {
     const dialogController = useAppSelector(appController).dialogState;
     const majorFailure = useAppSelector(appController).isMajorFailure;
 
-    const handleCloseDialog = (open: any) => {
+    const handleCloseDialog = (open: boolean) => {
         if (!open) {
             console.debug(`Closing dialog ${dialogController.dialogName}`);
             dispatch(closeDialog());
@@ -36,7 +36,7 @@ export default function Modal() {
             dispatch(openDialog(failureDialog(failedFiles)))
         }
         
-    }, [files]);
+    }, [files, dispatch]);
 
     //
     useEffect(() => {
@@ -48,11 +48,11 @@ export default function Modal() {
                 dialogController.dialogName === 'loadingFilesDialog' ? 2000 : 3000
             );
         }
-    }, [dialogController.dialogIsOpen]);
+    }, [dialogController.dialogIsOpen, dispatch]);
 
     useEffect(() => {
         if (majorFailure) dispatch(openDialog(majorFailureDialog()))
-    },[majorFailure])
+    },[majorFailure, dispatch])
 
     return (
         <Dialog open={dialogState.dialogIsOpen} onOpenChange={(open) => handleCloseDialog(open)}>

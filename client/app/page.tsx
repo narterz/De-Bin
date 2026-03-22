@@ -1,8 +1,8 @@
 "use client"
 
 import Header from "./components/Header";
-import DropBox from "./components/dropBox/dropBox";
-import Modal from "./components/modal/Modal";
+import DropBox from "./components/dropBox";
+import Modal from "./components/Modal";
 import { FaGithub } from "react-icons/fa";
 
 export default function Home() {

@@ -1,10 +1,10 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup } from "@/components/ui/select";
 
-import { useAppDispatch, useAppSelector } from "../../lib/hooks";
-import { appController } from "../../lib/selectors";
-import { toggleSelect } from "../../lib/reducers/appController";
-import { updateFileConversion } from "../../lib/reducers/processFiles";
-import { AcceptedFilTypes, FileState } from "../../utils/types";
+import { useAppDispatch, useAppSelector } from "../lib/hooks";
+import { appController } from "../lib/selectors";
+import { toggleSelect } from "../lib/reducers/appController";
+import { updateFileConversion } from "../lib/reducers/processFiles";
+import { AcceptedFilTypes, FileState } from "../utils/types";
 import { v4 as uuidv4 } from 'uuid';
 
 //TODO: Change color of placeholder text and icon carrot
@@ -16,7 +16,7 @@ export default function FileTypeSelect({ file }: { file: FileState }){
     const conversion = file.fileConversions?.conversion;
     const conversionList = file.fileConversions?.conversionList
 
-    const handleToggleSelect = (open:any) => {
+    const handleToggleSelect = (open:boolean) => {
         if(!open) {
             console.debug(`Select is now ${selectState.selectIsOpen ? 'opened' : 'closed'}`)
             dispatch(toggleSelect())
@@ -25,7 +25,7 @@ export default function FileTypeSelect({ file }: { file: FileState }){
 
     const handleSelection = (selection: AcceptedFilTypes) => {
         console.debug(`Closing select with selected file type ${selection}`)
-        let newFileState: FileState = structuredClone(file);
+        const newFileState: FileState = structuredClone(file);
         if (newFileState.fileConversions?.conversion) {
             newFileState.fileConversions.conversion = selection
             dispatch(updateFileConversion(newFileState))
