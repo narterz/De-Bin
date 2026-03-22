@@ -327,6 +327,27 @@
             opacity: 0.5;
         }
     }
+
+    .github-logo {
+        position: absolute;
+        text-decoration: none;
+        right: 20px;
+        bottom: 10px;
+        height: 44px;
+        width: 44px;
+        background-color: black;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: transform 0.3s ease-in-out;
+        transform: scale(1);
+
+        &:hover {
+            transform: scale(1.125);
+        }
+    }
 }
 
 @layer utilities {

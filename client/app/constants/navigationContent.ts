@@ -4,32 +4,32 @@ export const helpBtnContent: NavigationBtnContent[] = [
     {
         title: "Select your file(s)",
         description:
-            "Drag your file into the large blue box or click the choose file button to select files.",
+            "Drag your file into the large blue box or click the choose file button to select files. Once your file has been added, choose your file conversion type and press convert file. After a successful conversion, the file can be downloaded.",
     },
     {
         title: "Limitations",
         description:
-            "You can upload up to three compressed files at once, each no larger than 3MB.",
+            "You can upload and converted up to three files at a time. Each file can be no large than 3MB",
     },
     {
-        title: "Download your files",
+        title: "Acceptable files",
         description:
-            "After uploading, press 'de-bin' to download the converted files.",
+            "There are 20 file conversion possibilities in De-Bin. Accepted files include pdf, csv, jpg, png, xlsx, xlsb, txt, and zip",
     },
 ];
 
-export const toolsBtnContent: NavigationBtnContent[] = [
+export const communityBtn: NavigationBtnContent[] = [
     {
-        title: "Excel Decompression",
-        description: "Converts XLSB files to XLSX format.",
+        title: "View on Github",
+        description: "This project is open source! Click the Github logo on the bottom right to view the source code",
     },
     {
-        title: "Zip Decompression",
-        description: "Decompress a standard ZIP archive.",
+        title: "Feedback & Contribution",
+        description: "Your feedback is appreciated! If you want to suggest any fixes or new features message me on github or @ jaydenshelton@yahoo.com",
     },
     {
-        title: "Gzip Decompression",
-        description: "Decompress single .gz files.",
+        title: "Share the app",
+        description: "Loving De-Bin so far? Make sure to share the app with your friends. Spread the word!",
     },
 ];
 

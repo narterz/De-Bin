@@ -9,12 +9,12 @@ import {
   NavigationMenuItem,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { helpBtnContent, toolsBtnContent, sampleBtnContent } from "../constants/navigationContent";
+import { helpBtnContent, communityBtn, sampleBtnContent } from "../constants/navigationContent";
 
 export default function Header() {
   const menuContent = [
     { name: "Help", content: helpBtnContent },
-    { name: "Tools", content: toolsBtnContent },
+    { name: "Community", content: communityBtn },
     { name: "Download Samples", content: sampleBtnContent }
   ]
 
@@ -48,7 +48,7 @@ export default function Header() {
                 <NavigationMenuTrigger className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition">
                   {btn.name}
                 </NavigationMenuTrigger>
-                <NavigationMenuContent className="min-w-[24rem] p-4 bg-white shadow-lg rounded-md border border-gray-200">
+                <NavigationMenuContent className="min-w-[24rem] p-4 bg-white shadow-lg rounded-md border border-gray-200 max-h-96 overflow-y-auto">
                   <ul className="grid gap-4">
                     {btn.content.map(row => (
                       <NavigationMenuList className="nav-btns p-3 flex flex-col items-center space-evenly" key={row.title}>
