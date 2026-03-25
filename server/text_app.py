@@ -1,5 +1,4 @@
 import unittest
-import json
 import io
 from server import app
 import os

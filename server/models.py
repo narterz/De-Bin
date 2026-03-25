@@ -1,4 +1,3 @@
-import base64
 from pydantic.dataclasses import dataclass
 from typing import Optional, Union
 
