@@ -153,8 +153,8 @@ export default function DropBox() {
           }
         } else {
           // Handle rejection (e.g., network error)
-          const error = (backendResponse.payload as any)?.message || 'Failed to remove file';
-          throw new Error(error);
+          const fileStatus = backendResponse.payload as FileStatus;
+          throw new Error(fileStatus.error);
         }
 
         if (inputFile.current) {
@@ -213,7 +213,7 @@ export default function DropBox() {
   useEffect(() => {
     const allFilesSuccessful = files.every((file) => !file.fileStatus.error);
     setAllSuccessFiles(allFilesSuccessful)
-  }, [files])
+  }, [files, allSuccessFiles])
 
   useEffect(() => {
     const idleFiles = files.filter(file => file.fileStatus.status === 'idle');
@@ -232,8 +232,8 @@ export default function DropBox() {
                 throw new Error(error);
               }
             } else {
-              const error = (backendResponse.payload as any)?.message || 'Failed to upload file';
-              throw new Error(error);
+              const fileStatus = backendResponse.payload as FileStatus;
+              throw new Error(fileStatus.error);
             }
           }
         } catch (err) {

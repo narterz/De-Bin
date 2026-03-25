@@ -166,7 +166,7 @@ const processFiles = createSlice({
         builder.addCase(convertFile.pending, (state, action) => {
             const fileState: FileState = action.meta.arg;
             const fileName = fileState.metadata.fileName
-            void console.debug(`${fileName} is being evaluated by backend.`);
+            console.debug(`${fileName} is being evaluated by backend.`);
             const existingFileIndex = state.files.findIndex(file => fileState.metadata.id === file.metadata.id);
             state.files[existingFileIndex].fileStatus = {
                 status: 'loading',
@@ -200,7 +200,7 @@ const processFiles = createSlice({
         builder.addCase(uploadFileToBackend.pending, (state, action) => {
             const fileState = action.meta.arg.fileState;
             const fileName = fileState.metadata.fileName;
-            void console.debug(`File: ${fileName} is being uploaded to backend.`)
+            console.debug(`File: ${fileName} is being uploaded to backend.`)
             state.files.push({
                 ...fileState,
                 fileStatus: { status: 'loading', error: '' }

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import { Trash, File, MoveRight, X, Download } from "lucide-react";
 
-import { FileMetadata, FileState } from "../utils/types";
+import { FileState } from "../utils/types";
 import { getFileSizeValue } from "../utils/fileValidation";
 
 import { Button } from "@/components/ui/button";
