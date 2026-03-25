@@ -2,11 +2,11 @@
 
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogOverlay } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useAppDispatch, useAppSelector } from "../../lib/hooks";
-import { closeDialog, openDialog } from "../../lib/reducers/appController";
-import { appController, processFile } from "../../lib/selectors";
+import { useAppDispatch, useAppSelector } from "../lib/hooks";
+import { closeDialog, openDialog } from "../lib/reducers/appController";
+import { appController, processFile } from "../lib/selectors";
 import { useEffect } from "react";
-import { loadingFilesDialog, failureDialog, majorFailureDialog } from "../../utils/dialogContent";
+import { loadingFilesDialog, failureDialog, majorFailureDialog } from "../utils/dialogContent";
 
 export default function Modal() {
     const dispatch = useAppDispatch();
