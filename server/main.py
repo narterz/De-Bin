@@ -20,7 +20,7 @@ from utils.txt_conversion   import convert_to_txt
 from utils.zip_conversion   import convert_to_zip
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
+CORS(app, resources={r"/api/*": {"origins": "https://your-vercel-app.vercel.app"}}, supports_credentials=True)
 UPLOAD_FOLDER = "/tmp/"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 load_dotenv()

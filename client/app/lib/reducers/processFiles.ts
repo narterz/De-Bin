@@ -7,7 +7,7 @@ const initialState: FilesState = {
     files: [],
 }
 
-const backendURL = 'http://localhost:8001'
+const backendURL = process.env.NEXT_PUBLIC_API_URL;
 
 export const convertFile = createAsyncThunk<
     { fileState: FileState },         // Fulfilled response
