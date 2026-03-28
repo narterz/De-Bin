@@ -22,9 +22,13 @@ server/env/
 server/*.pyc
 server/.env*
 server/.DS_Store
+server/Procfile
+server/text_app.py
 
 # Misc
 .DS_Store
 *.pem
 *.tsbuildinfo
 next-env.d.ts
+Procfile
+deBinImg.png
